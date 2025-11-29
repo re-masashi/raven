@@ -1,4 +1,3 @@
-// src/game/structures.cpp
 #include "game.h"
 #include <iostream>
 
@@ -29,7 +28,6 @@ void initializeSpawnHut() {
   hutModel = LoadModelFromMesh(hutMesh);
   hutModel.materials[0].shader = lightingShader; // Apply fog shader
 
-  // Adjust Y position
   float terrainHeight = 15.0f; // Approximate
   spawnHut.position.y = terrainHeight + spawnHut.size.y / 2.0f;
 

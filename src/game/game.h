@@ -68,6 +68,8 @@ void InitWater();
 void DrawWater(const Camera &camera);
 void UnloadWater();
 
+void DrawFPSCounter();
+
 // Global structures
 extern Structure spawnHut;
 extern Model hutModel;

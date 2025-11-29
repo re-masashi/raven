@@ -1,4 +1,3 @@
-// src/game/game.cpp
 #ifndef DB_PERLIN_IMPL
 #define DB_PERLIN_IMPL
 #include "db_perlin.hpp"
@@ -8,6 +7,7 @@
 #include "raymath.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <iostream>
 #include <vector>
 
@@ -46,7 +46,7 @@ void InitGame() {
   lightDir.y /= len;
   lightDir.z /= len;
 
-  Vector3 lightColor = (Vector3){1.0f, 0.85f, 0.75f}; // Warm sunset light
+  Vector3 lightColor = (Vector3){1.0f, 0.85f, 1.0f};
 
   SetShaderValue(lightingShader, GetShaderLocation(lightingShader, "lightDir"),
                  &lightDir, SHADER_UNIFORM_VEC3);
@@ -142,6 +142,7 @@ void UpdateGame() {
       for (int dz = -renderDistance; dz <= renderDistance; dz++) {
         int ncx = cx + dx;
         int ncz = cz + dz;
+
         if (chunks.find({ncx, ncz}) == chunks.end()) {
           generateChunk(ncx, ncz);
           GenerateVegetationForChunk(chunks[{ncx, ncz}]);
@@ -213,7 +214,7 @@ void DrawGame() {
                WHITE);
 
   } else if (state == GAME) {
-    ClearBackground((Color){25, 15, 20, 255});
+    ClearBackground((Color){15, 15, 20, 255});
 
     BeginMode3D(camera);
 
@@ -232,7 +233,6 @@ void DrawGame() {
                           (float)(p.second.z * 31)};
       DrawModel(p.second.model, chunkPos, 1.0f, WHITE);
 
-      // DRAW VEGETATION FOR THIS CHUNK
       DrawVegetation(p.second, camera);
 
       rendered++;
@@ -241,6 +241,8 @@ void DrawGame() {
     DrawModel(hutModel, spawnHut.position, 1.0f, WHITE);
     // DrawGrid(100, 10.0f);
     EndMode3D();
+
+    DrawFPSCounter();
 
   } else if (state == SETTINGS) {
     int screenWidth = GetScreenWidth();
@@ -283,4 +285,38 @@ void UnloadGame() {
 
   UnloadShader(lightingShader);
   UnloadFont(font);
+}
+
+// FPS Counter with smoothing to make it more readable
+static float fpsHistory[120] = {0};
+static int fpsIndex = 0;
+static bool fpsInitialized = false;
+
+void DrawFPSCounter() {
+  // Get current FPS from Raylib
+  int currentFps = GetFPS();
+
+  // Initialize the history array if needed
+  if (!fpsInitialized) {
+    for (int i = 0; i < 60; i++) {
+      fpsHistory[i] = (float)currentFps;
+    }
+    fpsInitialized = true;
+  }
+
+  fpsHistory[fpsIndex] = (float)currentFps;
+  fpsIndex =
+      (fpsIndex + 1) %
+      (sizeof(fpsHistory) / sizeof(float)); // Move to next index, wrap around
+
+  float sum = 0.0f;
+  for (int i = 0; i < 60; i++) {
+    sum += fpsHistory[i];
+  }
+  float avgFps = sum / 60.0f;
+
+  char fpsText[32];
+  sprintf(fpsText, "FPS: %.0f", avgFps);
+
+  DrawText(fpsText, 10, 10, 20, YELLOW);
 }

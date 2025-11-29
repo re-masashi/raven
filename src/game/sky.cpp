@@ -1,4 +1,3 @@
-// src/game/sky.cpp
 #include "game.h"
 #include <algorithm>
 #include <cmath>

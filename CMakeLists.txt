@@ -1,7 +1,11 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.20)
 project(RavenGame)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always -Wall -Wextra -Wpedantic -Wconversion -Wshadow")
+
 find_package(raylib REQUIRED)
+
 add_executable(raven 
  src/core/main.cpp 
  src/game/game.cpp 
@@ -13,4 +17,6 @@ add_executable(raven
  src/game/vegetation.cpp
  src/game/water.cpp
 )
-target_link_libraries(raven raylib)
+
+target_link_libraries(raven PRIVATE raylib)
+target_include_directories(raven PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

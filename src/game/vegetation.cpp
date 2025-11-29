@@ -50,7 +50,7 @@ void GenerateVegetationForChunk(Chunk &chunk) {
           db::perlin(wx * 0.3f + 3000.0f, wz * 0.3f + 3000.0f);
 
       // Only place grass sometimes
-      if (placementNoise < -0.2f)
+      if (placementNoise < -2.0f)
         continue;
 
       float jitterX =
@@ -62,7 +62,7 @@ void GenerateVegetationForChunk(Chunk &chunk) {
       veg.position = {chunk.x * (float)stride + x + jitterX, height * 5.0f,
                       chunk.z * (float)stride + z + jitterZ};
       veg.rotation = placementNoise * 360.0f;
-      veg.scale = 0.3f + placementNoise * 0.2f; // Height
+      veg.scale = 0.3f + placementNoise * 0.2f;
       veg.modelType = 0;
       chunk.vegetation.push_back(veg);
     }
@@ -82,19 +82,16 @@ void DrawVegetation(const Chunk &chunk, const Camera &camera) {
     if (dist > maxDrawDistance)
       continue;
 
-    // FLAT grass patch on ground - not vertical
     Vector3 grassPos = {veg.position.x, veg.position.y + 0.05f, veg.position.z};
 
     // Dead grass color
     Color grassColor = (Color){75, 70, 40, 200};
 
-    // Draw flat horizontal plane for grass patch
     rlPushMatrix();
     rlTranslatef(grassPos.x, grassPos.y, grassPos.z);
     rlRotatef(90, 1, 0, 0);           // Rotate to lay flat
     rlRotatef(veg.rotation, 0, 0, 1); // Random rotation
 
-    // Flat rectangle
     DrawCubeV((Vector3){0, 0, 0},
               (Vector3){veg.scale * 0.8f, veg.scale * 0.6f, 0.02f}, grassColor);
 

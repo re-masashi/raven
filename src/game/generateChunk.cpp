@@ -1,7 +1,5 @@
-// src/game/generateChunk.cpp
 #include "db_perlin.hpp"
 #include "game.h"
-#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <vector>
@@ -71,23 +69,24 @@ void generateChunk(int cx, int cz) {
       float wz = cz * stride + z;
       int idx = z * chunkSize + x;
 
-      // Base terrain
-      float height = db::perlin(wx * 0.004f, wz * 0.004f) * 6.0f;
+      // MUCH LARGER scale terrain features - frequencies reduced dramatically
+      // Base terrain - very large rolling hills
+      float height = db::perlin(wx * 0.0015f, wz * 0.0015f) * 8.0f;
 
-      // Secondary rolling features
-      height += db::perlin(wx * 0.01f + 100.0f, wz * 0.01f + 100.0f) * 2.5f;
+      // Secondary large features (mountains/plateaus)
+      height += db::perlin(wx * 0.003f + 100.0f, wz * 0.003f + 100.0f) * 4.0f;
 
-      // Subtle medium variation
-      height += db::perlin(wx * 0.02f + 200.0f, wz * 0.02f + 200.0f) * 0.8f;
+      // Medium variation (gentle slopes)
+      height += db::perlin(wx * 0.006f + 200.0f, wz * 0.006f + 200.0f) * 1.5f;
 
-      // Very subtle detail
-      height += db::perlin(wx * 0.05f + 300.0f, wz * 0.05f + 300.0f) * 0.3f;
+      // Fine detail (very subtle - barely noticeable)
+      height += db::perlin(wx * 0.015f + 300.0f, wz * 0.015f + 300.0f) * 0.4f;
 
-      // Wide valleys
+      // Very wide valleys
       float valleyNoise =
-          db::perlin(wx * 0.003f + 500.0f, wz * 0.003f + 500.0f);
-      if (valleyNoise < -0.2f) {
-        height += (valleyNoise + 0.2f) * 2.5f; // Gentle valley dips
+          db::perlin(wx * 0.001f + 500.0f, wz * 0.001f + 500.0f);
+      if (valleyNoise < -0.25f) {
+        height += (valleyNoise + 0.25f) * 3.0f; // Gentle broad valleys
       }
 
       heights[idx] = height + 3.0f;
@@ -95,7 +94,7 @@ void generateChunk(int cx, int cz) {
       // Moisture
       moisture[idx] =
           0.5f +
-          db::perlin(wx * 0.015f + 2000.0f, wz * 0.015f + 2000.0f) * 0.3f;
+          db::perlin(wx * 0.008f + 2000.0f, wz * 0.008f + 2000.0f) * 0.3f;
       if (heights[idx] < 2.5f) {
         moisture[idx] += 0.3f;
       }
@@ -105,8 +104,8 @@ void generateChunk(int cx, int cz) {
     }
   }
 
-  // Meshuggah type heavy smoothing for veryyyyy natural curves
-  const int smoothIterations = 7; // More smoothing
+  // Reduced smoothing - the noise is already smooth at this scale
+  const int smoothIterations = 4; // Less aggressive smoothing
   const int edgeMargin = 1;
 
   for (int iter = 0; iter < smoothIterations; iter++) {
@@ -115,12 +114,12 @@ void generateChunk(int cx, int cz) {
       for (int x = edgeMargin; x < chunkSize - edgeMargin; x++) {
         int idx = z * chunkSize + x;
 
-        // Very gentle smoothing, prioritize neighbors
-        float sum = heights[idx] * 0.3f;
-        sum += heights[(z - 1) * chunkSize + x] * 0.175f;
-        sum += heights[(z + 1) * chunkSize + x] * 0.175f;
-        sum += heights[z * chunkSize + (x - 1)] * 0.175f;
-        sum += heights[z * chunkSize + (x + 1)] * 0.175f;
+        // Lighter smoothing - preserve more character
+        float sum = heights[idx] * 0.5f; // More center weight
+        sum += heights[(z - 1) * chunkSize + x] * 0.125f;
+        sum += heights[(z + 1) * chunkSize + x] * 0.125f;
+        sum += heights[z * chunkSize + (x - 1)] * 0.125f;
+        sum += heights[z * chunkSize + (x + 1)] * 0.125f;
         newHeights[idx] = sum;
       }
     }
