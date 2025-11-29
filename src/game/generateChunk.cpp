@@ -4,6 +4,9 @@
 #include <cmath>
 #include <vector>
 
+extern std::unordered_map<std::pair<int, int>, Chunk, pair_hash> chunks;
+extern Shader lightingShader;
+
 [[nodiscard]] bool isOnPath(float wx, float wz) noexcept {
   const float pathNoise1 = db::perlin(wx * 0.015f + 1000.0f, wz * 0.015f + 1000.0f);
   const float pathNoise2 = db::perlin(wx * 0.02f + 2000.0f, wz * 0.02f + 2000.0f);
@@ -42,7 +45,7 @@
   return influence;
 }
 
-void generateChunk(GameContext& ctx, int cx, int cz) {
+void generateChunk(int cx, int cz) {
   constexpr int chunkSize = 32;
   constexpr int stride = chunkSize - 1;
 
@@ -221,7 +224,7 @@ void generateChunk(GameContext& ctx, int cx, int cz) {
 
   UploadMesh(&mesh, false);
   Model model = LoadModelFromMesh(mesh);
-  model.materials[0].shader = ctx.lightingShader;
+  model.materials[0].shader = lightingShader;
 
   Chunk chunk;
   chunk.x = cx;
@@ -231,18 +234,18 @@ void generateChunk(GameContext& ctx, int cx, int cz) {
   chunk.moisture = std::move(moisture);
   chunk.vegetation = {}; // Will be populated by GenerateVegetationForChunk
   
-  ctx.chunks[{cx, cz}] = std::move(chunk);
+  chunks[{cx, cz}] = std::move(chunk);
 }
 
-float getTerrainHeight(const GameContext& ctx, float wx, float wz) {
+float getTerrainHeight(float wx, float wz) {
   // Determine which chunk this position is in
   constexpr int stride = 31;
   const int cx = static_cast<int>(std::floor(wx / stride));
   const int cz = static_cast<int>(std::floor(wz / stride));
 
   // Check if chunk exists
-  const auto it = ctx.chunks.find({cx, cz});
-  if (it == ctx.chunks.end()) {
+  const auto it = chunks.find({cx, cz});
+  if (it == chunks.end()) {
     // Chunk not loaded, estimate height from noise
     float height = 0.0f;
     height += db::perlin(wx * 0.004f, wz * 0.004f) * 6.0f;
