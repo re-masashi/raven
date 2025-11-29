@@ -6,17 +6,9 @@
 #include <random>
 #include <vector>
 
-struct Star {
-  Vector3 position;
-  float brightness;
-  float size;
-};
-
-std::vector<Star> stars;
-
-void GenerateStars() {
-  stars.clear();
-  stars.reserve(400);
+void GenerateStars(GameContext& ctx) {
+  ctx.stars.clear();
+  ctx.stars.reserve(400);
   
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -38,13 +30,13 @@ void GenerateStars() {
     star.brightness = 0.3f + dist(gen) * 0.7f;
     star.size = 1.0f + dist(gen) * 2.0f;
 
-    stars.push_back(star);
+    ctx.stars.push_back(star);
   }
 
-  std::cout << "Generated " << stars.size() << " stars" << std::endl;
+  std::cout << "Generated " << ctx.stars.size() << " stars" << std::endl;
 }
 
-void DrawSky(Camera camera) {
+void DrawSky(const GameContext& ctx, const Camera& camera) {
   constexpr Color fogColor = {115, 102, 97, 255};
   constexpr Color skyColorTop = {20, 15, 18, 255};
   constexpr Color skyColorHorizon = fogColor;
@@ -99,7 +91,7 @@ void DrawSky(Camera camera) {
   }
 
   // Draw stars with fog fade
-  for (const auto &star : stars) {
+  for (const auto &star : ctx.stars) {
     const Vector3 starPos = {camera.position.x + star.position.x,
                              camera.position.y + star.position.y,
                              camera.position.z + star.position.z};
@@ -122,4 +114,4 @@ void DrawSky(Camera camera) {
   }
 }
 
-void CleanupSky() { stars.clear(); }
+void CleanupSky(GameContext& ctx) { ctx.stars.clear(); }
