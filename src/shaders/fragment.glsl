@@ -31,7 +31,7 @@ void main() {
     vec3 fogColor = vec3(0.3, 0.30, 0.3);
     
     float fogFactor = 1.0 - exp(-0.04 * max(0.0, fragDistance - fogStart));
-    fogFactor = clamp(fogFactor, 0.0, 1.0);
+    fogFactor = 0; // clamp(fogFactor, 0.0, 1.0);
     
     vec3 finalColorRGB = mix(baseColor, fogColor, fogFactor);
     

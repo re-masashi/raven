@@ -319,4 +319,15 @@ void DrawFPSCounter() {
   sprintf(fpsText, "FPS: %.0f", avgFps);
 
   DrawText(fpsText, 10, 10, 20, YELLOW);
+
+  // Draw player position (XYZ)
+  char posText[64];
+  sprintf(posText, "XYZ: (%.1f, %.1f, %.1f)", camera.position.x, camera.position.y, camera.position.z);
+  DrawText(posText, 10, 35, 20, YELLOW);
+
+  // Draw distance from spawn
+  float distFromSpawn = Vector3Distance(camera.position, spawnHut.position);
+  char distText[64];
+  sprintf(distText, "Distance from spawn: %.1f", distFromSpawn);
+  DrawText(distText, 10, 60, 20, YELLOW);
 }
