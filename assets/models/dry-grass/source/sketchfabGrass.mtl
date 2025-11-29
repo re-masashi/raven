@@ -1,0 +1,13 @@
+# File produced by Open Asset Import Library (http://www.assimp.sf.net)
+# (assimp v6.0.0)
+
+newmtl M_dry_grass
+Kd 1 1 1
+Ka 0 0 0
+Ke 0 0 0
+Tf 0 0 0
+d 1
+illum 1
+map_Kd ..\grass texture\dry_grass_V1_baseColour.tga
+map_d ..\grass texture\dry_grass_V1_baseColour.tga
+
