@@ -28,7 +28,7 @@ void main() {
     // THICK FOG with SUBTLE reddish-brown tint
     float fogStart = 15.0;
     float fogEnd = 80.0;
-    vec3 fogColor = vec3(0.45, 0.40, 0.38); // Gray-brown with slight red tint
+    vec3 fogColor = vec3(0.3, 0.30, 0.3);
     
     float fogFactor = 1.0 - exp(-0.04 * max(0.0, fragDistance - fogStart));
     fogFactor = clamp(fogFactor, 0.0, 1.0);
@@ -40,9 +40,9 @@ void main() {
     finalColorRGB = mix(finalColorRGB, vec3(gray), 0.15);
     
     // Slight warm reddish tint
-    finalColorRGB.r *= 1.08;  // Bit more red
-    finalColorRGB.g *= 0.98;  
-    finalColorRGB.b *= 0.90;  // Less blue
+    finalColorRGB.r *= 0.95;  // Bit more red
+    finalColorRGB.g *= 0.95;  
+    finalColorRGB.b *= 0.98;  // Less blue
     
     finalColor = vec4(finalColorRGB, 1.0);
 }

@@ -4,7 +4,7 @@
 #include <iostream>
 
 Model waterPlane;
-float waterLevel = 10.0f; // Adjust to your terrain
+float waterLevel = 10.0f;
 
 extern Shader lightingShader;
 

@@ -2,21 +2,22 @@
 #include "raylib.h"
 
 int main() {
+  SetConfigFlags(FLAG_MSAA_4X_HINT);
   InitWindow(1080, 720, "The Raven");
   SetWindowState(FLAG_WINDOW_RESIZABLE);
-  SetTargetFPS(60);
+  // SetTargetFPS(60);
 
-  InitGame(); // Initialize game logic
+  InitGame();
 
   while (!WindowShouldClose()) {
-    UpdateGame(); // Update game logic
+    UpdateGame();
     BeginDrawing();
-    ClearBackground((Color){25, 15, 20, 255});
-    DrawGame(); // Draw game logic
+    ClearBackground((Color){15, 15, 20, 255});
+    DrawGame();
     EndDrawing();
   }
 
-  UnloadGame(); // Unload game logic
+  UnloadGame();
   CloseWindow();
   return 0;
 }
