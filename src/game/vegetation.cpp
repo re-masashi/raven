@@ -5,11 +5,8 @@
 #include <iostream>
 #include <vector>
 
-bool vegetationLoaded = false;
-extern Shader lightingShader;
-
-void LoadVegetationModels() {
-  vegetationLoaded = true;
+void LoadVegetationModels(GameContext& ctx) {
+  ctx.vegetationLoaded = true;
   std::cout << "Vegetation ready (procedural)" << std::endl;
 }
 
@@ -26,8 +23,8 @@ void LoadVegetationModels() {
   return std::abs(secondaryPath) < 0.08f;
 }
 
-void GenerateVegetationForChunk(Chunk &chunk) {
-  if (!vegetationLoaded) {
+void GenerateVegetationForChunk(const GameContext& ctx, Chunk &chunk) {
+  if (!ctx.vegetationLoaded) {
     return;
   }
 
@@ -71,8 +68,8 @@ void GenerateVegetationForChunk(Chunk &chunk) {
   }
 }
 
-void DrawVegetation(const Chunk &chunk, const Camera &camera) {
-  if (!vegetationLoaded) {
+void DrawVegetation(const GameContext& ctx, const Chunk &chunk, const Camera &camera) {
+  if (!ctx.vegetationLoaded) {
     return;
   }
 
@@ -101,7 +98,7 @@ void DrawVegetation(const Chunk &chunk, const Camera &camera) {
   }
 }
 
-void UnloadVegetationModels() {
-  vegetationLoaded = false;
+void UnloadVegetationModels(GameContext& ctx) {
+  ctx.vegetationLoaded = false;
   std::cout << "Vegetation unloaded" << std::endl;
 }

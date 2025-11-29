@@ -7,17 +7,18 @@ int main() {
   SetWindowState(FLAG_WINDOW_RESIZABLE);
   // SetTargetFPS(60);
 
-  InitGame();
+  GameContext ctx;
+  InitGame(ctx);
 
   while (!WindowShouldClose()) {
-    UpdateGame();
+    UpdateGame(ctx);
     BeginDrawing();
     ClearBackground(Color{15, 15, 20, 255});
-    DrawGame();
+    DrawGame(ctx);
     EndDrawing();
   }
 
-  UnloadGame();
+  UnloadGame(ctx);
   CloseWindow();
   return 0;
 }

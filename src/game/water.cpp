@@ -3,36 +3,33 @@
 #include "rlgl.h"
 #include <iostream>
 
-Model waterPlane;
 constexpr float waterLevel = 10.0f;
 
-extern Shader lightingShader;
-
-void InitWater() {
+void InitWater(GameContext& ctx) {
   // Create large water plane
   Mesh waterMesh = GenMeshPlane(2000.0f, 2000.0f, 1, 1);
-  waterPlane = LoadModelFromMesh(waterMesh);
+  ctx.waterPlane = LoadModelFromMesh(waterMesh);
 
   // Apply fog shader
-  waterPlane.materials[0].shader = lightingShader;
+  ctx.waterPlane.materials[0].shader = ctx.lightingShader;
 
   // Water color
-  waterPlane.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = {20, 30, 100, 180};
+  ctx.waterPlane.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = {20, 30, 100, 180};
 
   std::cout << "Water initialized at level: " << waterLevel << std::endl;
 }
 
-void DrawWater(const Camera &camera) {
+void DrawWater(const GameContext& ctx, const Camera &camera) {
   // Draw water plane at fixed height, centered on camera
   const Vector3 waterPos = {camera.position.x, waterLevel, camera.position.z};
 
   // Enable transparency
   rlSetBlendMode(BLEND_ALPHA);
-  DrawModel(waterPlane, waterPos, 1.0f, WHITE);
+  DrawModel(ctx.waterPlane, waterPos, 1.0f, WHITE);
   rlSetBlendMode(BLEND_ALPHA);
 }
 
-void UnloadWater() {
-  UnloadModel(waterPlane);
+void UnloadWater(GameContext& ctx) {
+  UnloadModel(ctx.waterPlane);
   std::cout << "Water unloaded" << std::endl;
 }
