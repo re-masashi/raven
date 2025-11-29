@@ -12,7 +12,7 @@ int main() {
   while (!WindowShouldClose()) {
     UpdateGame();
     BeginDrawing();
-    ClearBackground((Color){15, 15, 20, 255});
+    ClearBackground(Color{15, 15, 20, 255});
     DrawGame();
     EndDrawing();
   }

@@ -1,16 +1,18 @@
 #include "game.h"
 #include "raymath.h"
+#include <array>
+#include <cmath>
 
 struct Frustum {
-  Vector4 planes[6]; // left, right, bottom, top, near, far
+  std::array<Vector4, 6> planes; // left, right, bottom, top, near, far
 };
 
-Frustum ExtractFrustum(const Camera &camera) {
-  Matrix viewProj = MatrixMultiply(
+[[nodiscard]] Frustum ExtractFrustum(const Camera &camera) noexcept {
+  const Matrix viewProj = MatrixMultiply(
       GetCameraMatrix(camera),
       MatrixPerspective(camera.fovy * DEG2RAD,
-                        (float)GetScreenWidth() / GetScreenHeight(), 0.1f,
-                        1000.0f));
+                        static_cast<float>(GetScreenWidth()) / static_cast<float>(GetScreenHeight()), 
+                        0.1f, 1000.0f));
 
   Frustum frustum;
   // Left plane
@@ -35,47 +37,49 @@ Frustum ExtractFrustum(const Camera &camera) {
                        viewProj.m15 - viewProj.m14};
 
   // Normalize planes
-  for (int i = 0; i < 6; i++) {
-    float len = sqrt(frustum.planes[i].x * frustum.planes[i].x +
-                     frustum.planes[i].y * frustum.planes[i].y +
-                     frustum.planes[i].z * frustum.planes[i].z);
-    frustum.planes[i].x /= len;
-    frustum.planes[i].y /= len;
-    frustum.planes[i].z /= len;
-    frustum.planes[i].w /= len;
+  for (auto &plane : frustum.planes) {
+    const float len = std::sqrt(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
+    plane.x /= len;
+    plane.y /= len;
+    plane.z /= len;
+    plane.w /= len;
   }
 
   return frustum;
 }
 
-bool IsChunkInFrustum(const Chunk &chunk, const Camera &camera) {
-  Frustum frustum = ExtractFrustum(camera);
+[[nodiscard]] bool IsChunkInFrustum(const Chunk &chunk, const Camera &camera) noexcept {
+  const Frustum frustum = ExtractFrustum(camera);
 
   // Chunk bounding box (world space)
-  Vector3 chunkPos = {(float)(chunk.x * 31), 0.0f, (float)(chunk.z * 31)};
-  float minY = 0.0f, maxY = 40.0f;
+  const Vector3 chunkPos = {static_cast<float>(chunk.x * 31), 0.0f, static_cast<float>(chunk.z * 31)};
+  constexpr float minY = 0.0f;
+  constexpr float maxY = 40.0f;
 
-  Vector3 corners[8] = {{chunkPos.x, minY, chunkPos.z},
-                        {chunkPos.x + 31, minY, chunkPos.z},
-                        {chunkPos.x, minY, chunkPos.z + 31},
-                        {chunkPos.x + 31, minY, chunkPos.z + 31},
-                        {chunkPos.x, maxY, chunkPos.z},
-                        {chunkPos.x + 31, maxY, chunkPos.z},
-                        {chunkPos.x, maxY, chunkPos.z + 31},
-                        {chunkPos.x + 31, maxY, chunkPos.z + 31}};
+  const std::array<Vector3, 8> corners = {{
+      {chunkPos.x, minY, chunkPos.z},
+      {chunkPos.x + 31, minY, chunkPos.z},
+      {chunkPos.x, minY, chunkPos.z + 31},
+      {chunkPos.x + 31, minY, chunkPos.z + 31},
+      {chunkPos.x, maxY, chunkPos.z},
+      {chunkPos.x + 31, maxY, chunkPos.z},
+      {chunkPos.x, maxY, chunkPos.z + 31},
+      {chunkPos.x + 31, maxY, chunkPos.z + 31}
+  }};
 
   // Test against all 6 frustum planes
-  for (int i = 0; i < 6; i++) {
+  for (const auto &plane : frustum.planes) {
     int out = 0;
-    for (int j = 0; j < 8; j++) {
-      float dist = frustum.planes[i].x * corners[j].x +
-                   frustum.planes[i].y * corners[j].y +
-                   frustum.planes[i].z * corners[j].z + frustum.planes[i].w;
-      if (dist < 0)
-        out++;
+    for (const auto &corner : corners) {
+      const float dist = plane.x * corner.x + plane.y * corner.y + 
+                        plane.z * corner.z + plane.w;
+      if (dist < 0) {
+        ++out;
+      }
     }
-    if (out == 8)
+    if (out == 8) {
       return false; // All corners outside this plane
+    }
   }
 
   return true;

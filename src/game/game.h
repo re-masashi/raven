@@ -1,12 +1,14 @@
-#ifndef GAME_H
-#define GAME_H
+#pragma once
 
 #include "raylib.h"
 #include "raymath.h"
 #include <unordered_map>
 #include <vector>
+#include <array>
+#include <span>
+#include <memory>
 
-enum GameState { MENU, GAME, SETTINGS };
+enum class GameState { MENU, GAME, SETTINGS };
 
 struct Path {
   std::vector<Vector3> points;
@@ -37,8 +39,8 @@ struct Chunk {
 
 struct pair_hash {
   template <class T1, class T2>
-  std::size_t operator()(const std::pair<T1, T2> &pair) const {
-    return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+  [[nodiscard]] constexpr std::size_t operator()(const std::pair<T1, T2> &pair) const noexcept {
+    return std::hash<T1>()(pair.first) ^ (std::hash<T2>()(pair.second) << 1);
   }
 };
 
@@ -48,7 +50,7 @@ void DrawGame();
 void UnloadGame();
 void generateChunk(int cx, int cz);
 float getTerrainHeight(float wx, float wz);
-bool IsChunkInFrustum(const Chunk &chunk, const Camera &camera);
+[[nodiscard]] bool IsChunkInFrustum(const Chunk &chunk, const Camera &camera) noexcept;
 
 void UpdatePlayer(float deltaTime);
 void initializeSpawnHut();
@@ -71,10 +73,8 @@ void UnloadWater();
 void DrawFPSCounter();
 
 // Global structures
-extern Structure spawnHut;
-extern Model hutModel;
-extern Vector3 playerVelocity;
-extern float playerHeight;
-extern bool isGrounded;
-
-#endif // GAME_H
+inline Structure spawnHut;
+inline Model hutModel;
+inline Vector3 playerVelocity{0, 0, 0};
+inline float playerHeight = 1.7f;
+inline bool isGrounded = false;
