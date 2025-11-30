@@ -533,18 +533,8 @@ Player can interact with Lenore's belongings:
 ```
 /raven_game
 ├── /src
-│   ├── main.c                 # Entry point, game loop
-│   ├── player.c/h             # Player movement, camera
-│   ├── world.c/h              # Terrain, world generation
-│   ├── raven.c/h              # Raven AI, behavior
-│   ├── objects.c/h            # Interactable objects
-│   ├── quest.c/h              # Quest system
-│   ├── audio.c/h              # Audio manager
-│   ├── ui.c/h                 # UI rendering, menus
-│   ├── narrative.c/h          # Voiceover triggers, story
-│   ├── fog.c/h                # Fog rendering
-│   ├── particles.c/h          # Particle systems
-│   └── utils.c/h              # Helper functions
+│   └── /shaders               # Custom shaders
+│   └─   # other code
 ├── /assets
 │   ├── /models                # 3D models (.obj, .gltf)
 │   ├── /textures              # Texture files
@@ -553,7 +543,6 @@ Player can interact with Lenore's belongings:
 │   │   ├── /sfx               # Sound effects
 │   │   └── /voice             # Voiceover lines
 │   ├── /fonts                 # TTF fonts
-│   └── /shaders               # Custom shaders (if needed)
 ├── /build                     # Compiled output
 └── README.md
 ```
@@ -561,22 +550,6 @@ Player can interact with Lenore's belongings:
 ### **Core Systems to Implement**
 
 #### **1. Player Controller**
-```c
-typedef struct {
-    Vector3 position;
-    Vector3 velocity;
-    Camera3D camera;
-    float moveSpeed;      // 4.0f
-    float sprintSpeed;    // 8.0f
-    float mouseSensitivity;
-    bool isSprinting;
-} Player;
-
-void UpdatePlayer(Player* player, float deltaTime);
-void HandlePlayerInput(Player* player);
-void UpdateCamera(Player* player);
-```
-
 **Features:**
 - Smooth WASD movement
 - Mouse look with sensitivity
@@ -588,20 +561,6 @@ void UpdateCamera(Player* player);
 ---
 
 #### **2. Terrain System**
-```c
-typedef struct {
-    Mesh mesh;
-    Model model;
-    float size;           // Size of terrain chunk
-    Vector2 position;     // World position
-    float* heights;       // Height data
-} TerrainChunk;
-
-void GenerateTerrainChunk(TerrainChunk* chunk, Vector2 pos);
-float GetTerrainHeight(Vector3 worldPos);
-void UpdateVisibleChunks(Vector3 playerPos);
-```
-
 **Features:**
 - Infinite generation (you have this)
 - LOD (optional, for performance)
@@ -611,32 +570,6 @@ void UpdateVisibleChunks(Vector3 playerPos);
 ---
 
 #### **3. Raven AI**
-```c
-typedef struct {
-    Vector3 position;
-    Vector3 targetPosition;
-    Model model;
-    bool isFlying;
-    bool isPerched;
-    float flySpeed;       // 6.0f (slightly faster than player)
-    Vector3 perchPoint;
-    RavenState state;     // IDLE, FLYING, PERCHED, BLOCKING
-} Raven;
-
-typedef enum {
-    RAVEN_IDLE,
-    RAVEN_FLYING_TO_TARGET,
-    RAVEN_PERCHED,
-    RAVEN_BLOCKING_PATH,
-    RAVEN_OBSERVING
-} RavenState;
-
-void UpdateRaven(Raven* raven, Vector3 playerPos, float deltaTime);
-void RavenFlyTo(Raven* raven, Vector3 target);
-void RavenPerch(Raven* raven, Vector3 perchPoint);
-bool IsPlayerNearRaven(Raven* raven, Vector3 playerPos, float radius);
-```
-
 **Behaviors:**
 - Pathfind to perch points (simple waypoint system)
 - Smooth flight (lerp position)
@@ -648,30 +581,6 @@ bool IsPlayerNearRaven(Raven* raven, Vector3 playerPos, float radius);
 ---
 
 #### **4. Quest System**
-```c
-typedef struct {
-    char* description;
-    QuestType type;
-    int targetCount;      // e.g., 5 embers
-    int currentCount;
-    bool isActive;
-    bool isComplete;
-    Vector3 targetLocation;
-} Quest;
-
-typedef enum {
-    QUEST_COLLECT_EMBERS,
-    QUEST_REACH_LOCATION,
-    QUEST_EXAMINE_OBJECT,
-    QUEST_FOLLOW_RAVEN
-} QuestType;
-
-void StartQuest(Quest* quest);
-void UpdateQuestProgress(Quest* quest, QuestType type, int amount);
-void CompleteQuest(Quest* quest);
-bool IsQuestComplete(Quest* quest);
-```
-
 **Features:**
 - One active quest at a time
 - Simple progress tracking
@@ -681,31 +590,6 @@ bool IsQuestComplete(Quest* quest);
 ---
 
 #### **5. Interactable Objects**
-```c
-typedef struct {
-    Vector3 position;
-    ObjectType type;
-    Model model;           // or primitive shape
-    char* examineText;
-    char* interactPrompt;
-    bool isCollected;      // for memory embers
-    void (*onInteract)(void* data);
-} WorldObject;
-
-typedef enum {
-    OBJ_MEMORY_EMBER,
-    OBJ_LETTER,
-    OBJ_PHOTO,
-    OBJ_DOOR,
-    OBJ_FURNITURE,
-    OBJ_LANDMARK
-} ObjectType;
-
-void CheckInteraction(Player* player, WorldObject* objects, int count);
-void InteractWithObject(WorldObject* obj);
-void DrawInteractionPrompt(WorldObject* obj, Vector3 playerPos);
-```
-
 **Features:**
 - Distance-based prompt (show "Press E" within 2-3 units)
 - Trigger audio/narration on interact
@@ -715,31 +599,6 @@ void DrawInteractionPrompt(WorldObject* obj, Vector3 playerPos);
 ---
 
 #### **6. Audio Manager**
-```c
-typedef struct {
-    Sound sound;
-    bool isPlaying;
-    bool is3D;
-    Vector3 position;     // for 3D sounds
-    float volume;
-} AudioSource;
-
-typedef struct {
-    Music ambientTrack;
-    AudioSource* sources;
-    int sourceCount;
-    float masterVolume;
-    float musicVolume;
-    float sfxVolume;
-} AudioManager;
-
-void InitAudioManager(AudioManager* mgr);
-void PlaySound3D(AudioManager* mgr, Sound sound, Vector3 pos);
-void PlayNarration(AudioManager* mgr, char* lineID);
-void UpdateAudio(AudioManager* mgr, Vector3 listenerPos);
-void SetAreaAmbience(AudioManager* mgr, AreaType area);
-```
-
 **Features:**
 - 3D positional audio (raven caw, footsteps)
 - Area-based ambient music
@@ -750,24 +609,6 @@ void SetAreaAmbience(AudioManager* mgr, AreaType area);
 ---
 
 #### **7. UI System**
-```c
-typedef struct {
-    bool isMainMenu;
-    bool isPaused;
-    bool isJournalOpen;
-    MenuState currentMenu;
-    Quest* activeQuest;
-    char* interactionPrompt;
-} UIState;
-
-void DrawHUD(UIState* ui);
-void DrawMainMenu(UIState* ui);
-void DrawPauseMenu(UIState* ui);
-void DrawJournal(UIState* ui, Player* player);
-void DrawInteractionPrompt(char* text);
-void DrawQuestObjective(Quest* quest);
-```
-
 **Features:**
 - Minimal HUD
 - Quest display (fades after 3 seconds if no update)
@@ -778,29 +619,6 @@ void DrawQuestObjective(Quest* quest);
 ---
 
 #### **8. Narrative System**
-```c
-typedef struct {
-    char* lineID;
-    char* text;           // for subtitles
-    Sound voiceClip;
-    bool hasPlayed;
-    TriggerType trigger;
-    Vector3 triggerPos;   // if location-based
-    float triggerRadius;
-} NarrationLine;
-
-typedef enum {
-    TRIGGER_LOCATION,
-    TRIGGER_QUEST_COMPLETE,
-    TRIGGER_OBJECT_INTERACT,
-    TRIGGER_AREA_ENTER
-} TriggerType;
-
-void CheckNarrationTriggers(Player* player, NarrationLine* lines, int count);
-void PlayNarration(NarrationLine* line);
-void DisplaySubtitle(char* text, float duration);
-```
-
 **Features:**
 - Trigger voiceover at specific points
 - Subtitle display (bottom of screen)
@@ -810,20 +628,6 @@ void DisplaySubtitle(char* text, float duration);
 ---
 
 #### **9. Fog System**
-```c
-typedef struct {
-    float density;
-    float start;
-    float end;
-    Color color;
-    bool isVolumetric;    // if you implement volumetric fog
-} FogSettings;
-
-void SetFogForArea(FogSettings* fog, AreaType area);
-void UpdateFogDensity(FogSettings* fog, Vector3 playerPos);
-void ApplyFog(FogSettings* fog);
-```
-
 **Features:**
 - Distance-based fog (built into raylib)
 - Area-specific fog density
@@ -833,37 +637,6 @@ void ApplyFog(FogSettings* fog);
 ---
 
 #### **10. Particle System**
-```c
-typedef struct {
-    Vector3 position;
-    Vector3 velocity;
-    float lifetime;
-    float age;
-    Color color;
-    float size;
-} Particle;
-
-typedef struct {
-    Particle* particles;
-    int maxParticles;
-    int activeCount;
-    ParticleType type;
-    Vector3 emitterPos;
-    bool isActive;
-} ParticleEmitter;
-
-typedef enum {
-    PARTICLE_EMBER,
-    PARTICLE_ASH,
-    PARTICLE_MIST,
-    PARTICLE_DUST
-} ParticleType;
-
-void UpdateParticles(ParticleEmitter* emitter, float deltaTime);
-void EmitParticle(ParticleEmitter* emitter);
-void DrawParticles(ParticleEmitter* emitter);
-```
-
 **Features:**
 - Memory ember glow (particles orbit ember)
 - Ash falling in burned area
@@ -873,21 +646,6 @@ void DrawParticles(ParticleEmitter* emitter);
 ---
 
 #### **11. Save System**
-```c
-typedef struct {
-    Vector3 playerPosition;
-    int questProgress;
-    bool collectedEmbers[50];  // track which embers collected
-    bool discoveredAreas[6];
-    float playtime;
-    int ending;               // which ending achieved
-} SaveData;
-
-void SaveGame(SaveData* data, char* filename);
-void LoadGame(SaveData* data, char* filename);
-bool SaveFileExists(char* filename);
-```
-
 **Features:**
 - Auto-save on quest completion
 - Manual save in pause menu
@@ -901,11 +659,11 @@ bool SaveFileExists(char* filename);
 ### **PHASE 0: Pre-Production (1 week)**
 
 **Setup:**
-- [ ] Set up project structure (folders, source files)
-- [ ] Initialize raylib project
-- [ ] Set up version control (git repository)
-- [ ] Create build system (Makefile or CMake)
-- [ ] Test compilation and basic window creation
+- [x] Set up project structure (folders, source files)
+- [x] Initialize raylib project
+- [x] Set up version control (git repository)
+- [x] Create build system (Makefile or CMake)
+- [x] Test compilation and basic window creation
 
 **Design:**
 - [ ] Write complete narrative script (all voiceover lines)
@@ -928,28 +686,28 @@ bool SaveFileExists(char* filename);
 #### **Week 1: Core Player Systems**
 
 **Player Movement:**
-- [ ] Implement basic first-person camera
-- [ ] Add WASD movement (constant speed)
-- [ ] Add mouse look (pitch/yaw control)
-- [ ] Implement sprint (Shift key, 2x speed)
-- [ ] Add basic collision with terrain
-- [ ] Test movement feel (adjust speeds if needed)
+- [x] Impxement basic first-person camera
+- [x] Add WASD movement (constant speed)
+- [x] Add mouse look (pitch/yaw control)
+- [x] Implement sprint (Shift key, 2x speed)
+- [x] Add basic collision with terrain
+- [x] Test movement feel (adjust speeds if needed)
 
 **Camera:**
-- [ ] Smooth camera rotation
-- [ ] Clamp vertical look angle (-89° to 89°)
-- [ ] Add mouse sensitivity setting
-- [ ] Optional: subtle head bob when walking
+- [x] Smooth camera rotation
+- [x] Clamp vertical look angle (-89° to 89°)
+- [x] Add mouse sensitivity setting
+- [x] Optional: subtle head bob when walking
 
 **Terrain Integration:**
-- [ ] Query terrain height at player position
-- [ ] Keep player grounded (position.y = terrain height)
-- [ ] Test on your procedurally generated terrain
-- [ ] Ensure no falling through terrain
+- [x] Query terrain height at player position
+- [x] Keep player grounded (position.y = terrain height)
+- [x] Test on your procedurally generated terrain
+- [x] Ensure no falling through terrain
 
 **Debug Tools:**
-- [ ] Display player position on screen
-- [ ] Display FPS counter
+- [x] Display player position on screen
+- [x] Display FPS counter
 - [ ] Toggle wireframe mode
 - [ ] Toggle collision visualization
 
@@ -959,15 +717,15 @@ bool SaveFileExists(char* filename);
 
 **Terrain System:**
 - [ ] Refine terrain generation for Dawn aesthetic
-- [ ] Implement terrain chunking (if not already done)
-- [ ] Add basic texture (gray-blue gradient by height)
+- [x] Implement terrain chunking (if not already done)
+- [x] Add basic texture (gray-blue gradient by height)
 - [ ] Optimize terrain rendering
 
 **Lighting:**
-- [ ] Set up directional light (dawn angle, ~15° above horizon)
-- [ ] Set ambient light (cool blue-gray, low intensity)
-- [ ] Test lighting across terrain
-- [ ] Adjust colors to match gray-blue palette
+- [x] Set up directional light (dawn angle, ~15° above horizon)
+- [x] Set ambient light (cool blue-gray, low intensity)
+- [x] Test lighting across terrain
+- [x] Adjust colors to match gray-blue palette
 
 **Fog:**
 - [ ] Implement distance fog (raylib built-in)
@@ -1007,7 +765,7 @@ bool SaveFileExists(char* filename);
 - [ ] Test interaction while moving
 
 **UI Framework:**
-- [ ] Set up basic UI rendering (raylib text)
+- [x] Set up basic UI rendering (raylib text)
 - [ ] Create DrawText helper with custom font
 - [ ] Implement interaction prompt display (bottom center)
 - [ ] Fade in/out animation for prompt
