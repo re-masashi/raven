@@ -48,7 +48,7 @@ void InitGame() {
   lightDir.y /= len;
   lightDir.z /= len;
 
-  Vector3 lightColor = {1.0f, 0.85f, 1.0f};
+  Vector3 lightColor = {1.1f, 0.9f, 1.1f};
 
   SetShaderValue(lightingShader, GetShaderLocation(lightingShader, "lightDir"),
                  &lightDir, SHADER_UNIFORM_VEC3);
