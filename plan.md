@@ -719,7 +719,7 @@ Player can interact with Lenore's belongings:
 - [ ] Refine terrain generation for Dawn aesthetic
 - [x] Implement terrain chunking (if not already done)
 - [x] Add basic texture (gray-blue gradient by height)
-- [ ] Optimize terrain rendering
+- [x] Optimize terrain rendering
 
 **Lighting:**
 - [x] Set up directional light (dawn angle, ~15° above horizon)
@@ -738,9 +738,9 @@ Player can interact with Lenore's belongings:
 - [ ] Define world center (0, 0, 0)
 - [ ] Define world radius (750 units)
 - [ ] Implement soft boundary system:
-  - [ ] Increase fog density beyond radius
-  - [ ] Add gentle physics push toward center
-  - [ ] Display warning text when far from center
+- [ ] Increase fog density beyond radius
+- [ ] Add gentle physics push toward center
+- [ ] Display warning text when far from center
 
 **Debug Tools:**
 - [ ] Draw world boundary circle

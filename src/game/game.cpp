@@ -40,9 +40,10 @@ void InitGame() {
   LoadVegetationModels();
   InitWater();
 
-  Vector3 lightDir = {-0.4f, -0.8f, 0.4f};
-  const float len = std::sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y +
-                              lightDir.z * lightDir.z);
+  Vector3 lightDir = {-0.9659f, -0.2588f, 0.0f}; // ~15 degrees from horizontal
+  const float len =
+      std::sqrt(lightDir.x * lightDir.x + lightDir.y * lightDir.y +
+                lightDir.z * lightDir.z);
   lightDir.x /= len;
   lightDir.y /= len;
   lightDir.z /= len;
@@ -77,9 +78,11 @@ void UpdateGame() {
     const int screenHeight = GetScreenHeight();
 
     const Rectangle enterGameBtn = {static_cast<float>(screenWidth) / 2 - 150,
-                                    static_cast<float>(screenHeight) / 2 - 50, 300, 50};
+                                    static_cast<float>(screenHeight) / 2 - 50,
+                                    300, 50};
     const Rectangle settingsBtn = {static_cast<float>(screenWidth) / 2 - 150,
-                                   static_cast<float>(screenHeight) / 2 + 10, 300, 50};
+                                   static_cast<float>(screenHeight) / 2 + 10,
+                                   300, 50};
 
     if (CheckCollisionPointRec(GetMousePosition(), enterGameBtn) &&
         IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -115,7 +118,8 @@ void UpdateGame() {
 
     // Teleport to spawn with H key
     if (IsKeyPressed(KEY_H)) {
-      camera.position = {spawnHut.position.x - 15.0f, spawnHut.position.y + 10.0f,
+      camera.position = {spawnHut.position.x - 15.0f,
+                         spawnHut.position.y + 10.0f,
                          spawnHut.position.z - 15.0f};
     }
 
@@ -148,12 +152,14 @@ void UpdateGame() {
     }
 
     // Unload distant chunks
-    const float unloadDistance = static_cast<float>((renderDistance + 2) * stride);
+    const float unloadDistance =
+        static_cast<float>((renderDistance + 2) * stride);
     std::vector<std::pair<int, int>> toUnload;
 
     for (const auto &[coords, chunk] : chunks) {
-      const Vector3 chunkCenter = {static_cast<float>(chunk.x * stride + stride / 2), 15.0f,
-                                   static_cast<float>(chunk.z * stride + stride / 2)};
+      const Vector3 chunkCenter = {
+          static_cast<float>(chunk.x * stride + stride / 2), 15.0f,
+          static_cast<float>(chunk.z * stride + stride / 2)};
       const float dist = Vector3Distance(camera.position, chunkCenter);
 
       if (dist > unloadDistance) {
@@ -178,16 +184,20 @@ void DrawGame() {
     const int screenHeight = GetScreenHeight();
 
     const Rectangle enterGameBtn = {static_cast<float>(screenWidth) / 2 - 150,
-                                    static_cast<float>(screenHeight) / 2 - 50, 300, 50};
+                                    static_cast<float>(screenHeight) / 2 - 50,
+                                    300, 50};
     const Rectangle settingsBtn = {static_cast<float>(screenWidth) / 2 - 150,
-                                   static_cast<float>(screenHeight) / 2 + 10, 300, 50};
+                                   static_cast<float>(screenHeight) / 2 + 10,
+                                   300, 50};
 
-    const Color enterColor = CheckCollisionPointRec(GetMousePosition(), enterGameBtn)
-                           ? Color{100, 100, 100, 255}
-                           : Color{50, 50, 50, 255};
-    const Color settingsColor = CheckCollisionPointRec(GetMousePosition(), settingsBtn)
-                              ? Color{100, 100, 100, 255}
-                              : Color{50, 50, 50, 255};
+    const Color enterColor =
+        CheckCollisionPointRec(GetMousePosition(), enterGameBtn)
+            ? Color{100, 100, 100, 255}
+            : Color{50, 50, 50, 255};
+    const Color settingsColor =
+        CheckCollisionPointRec(GetMousePosition(), settingsBtn)
+            ? Color{100, 100, 100, 255}
+            : Color{50, 50, 50, 255};
 
     DrawRectangleRec(enterGameBtn, enterColor);
     const Vector2 enterTextSize = MeasureTextEx(font, "Enter Game", 20, 1.0f);
@@ -206,8 +216,8 @@ void DrawGame() {
     constexpr const char *title = "The Raven";
     const Vector2 titleSize = MeasureTextEx(font, title, 40, 1.0f);
     DrawTextEx(font, title,
-               {static_cast<float>(screenWidth) / 2 - titleSize.x / 2, 100.0f}, 40, 1.0f,
-               WHITE);
+               {static_cast<float>(screenWidth) / 2 - titleSize.x / 2, 100.0f},
+               40, 1.0f, WHITE);
 
   } else if (state == GameState::GAME) {
     ClearBackground(Color{15, 15, 20, 255});
@@ -247,20 +257,20 @@ void DrawGame() {
     constexpr const char *settingsTitle = "Settings";
     const Vector2 titleSize = MeasureTextEx(font, settingsTitle, 30, 1.0f);
     DrawTextEx(font, settingsTitle,
-               {static_cast<float>(screenWidth) / 2 - titleSize.x / 2, 100.0f}, 30, 1.0f,
-               WHITE);
+               {static_cast<float>(screenWidth) / 2 - titleSize.x / 2, 100.0f},
+               30, 1.0f, WHITE);
 
     constexpr const char *placeholder = "Settings coming soon...";
     const Vector2 textSize = MeasureTextEx(font, placeholder, 20, 1.0f);
     DrawTextEx(font, placeholder,
-               {static_cast<float>(screenWidth) / 2 - textSize.x / 2, 
+               {static_cast<float>(screenWidth) / 2 - textSize.x / 2,
                 static_cast<float>(screenHeight) / 2},
                20, 1.0f, LIGHTGRAY);
 
     constexpr const char *escText = "Press ESC to return";
     const Vector2 escSize = MeasureTextEx(font, escText, 16, 1.0f);
     DrawTextEx(font, escText,
-               {static_cast<float>(screenWidth) / 2 - escSize.x / 2, 
+               {static_cast<float>(screenWidth) / 2 - escSize.x / 2,
                 static_cast<float>(screenHeight - 50)},
                16, 1.0f, GRAY);
   }
@@ -311,12 +321,15 @@ void DrawFPSCounter() {
   DrawText(fpsText.c_str(), 10, 10, 20, YELLOW);
 
   // Draw player position (XYZ)
-  const std::string posText = std::format("XYZ: ({:.1f}, {:.1f}, {:.1f})", 
-                                          camera.position.x, camera.position.y, camera.position.z);
+  const std::string posText =
+      std::format("XYZ: ({:.1f}, {:.1f}, {:.1f})", camera.position.x,
+                  camera.position.y, camera.position.z);
   DrawText(posText.c_str(), 10, 35, 20, YELLOW);
 
   // Draw distance from spawn
-  const float distFromSpawn = Vector3Distance(camera.position, spawnHut.position);
-  const std::string distText = std::format("Distance from spawn: {:.1f}", distFromSpawn);
+  const float distFromSpawn =
+      Vector3Distance(camera.position, spawnHut.position);
+  const std::string distText =
+      std::format("Distance from spawn: {:.1f}", distFromSpawn);
   DrawText(distText.c_str(), 10, 60, 20, YELLOW);
 }

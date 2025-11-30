@@ -21,14 +21,14 @@ float breathTimer = 0.0f;
 Vector3 headOffset{0, 0, 0};
 Vector3 headVelocity{0, 0, 0};
 
-constexpr float stepFrequency = 1.8f;        // Steps per second at walk speed
-constexpr float stepHeight = 0.04f;          // Vertical head displacement per step
-constexpr float stepStrideRoll = 0.8f;       // Degrees of roll per step
-constexpr float stepStrideSway = 0.015f;     // Lateral head sway
-constexpr float landingImpact = 0.12f;       // Landing squat amount
+constexpr float stepFrequency = 1.8f;    // Steps per second at walk speed
+constexpr float stepHeight = 0.04f;      // Vertical head displacement per step
+constexpr float stepStrideRoll = 0.8f;   // Degrees of roll per step
+constexpr float stepStrideSway = 0.015f; // Lateral head sway
+constexpr float landingImpact = 0.2f;    // Landing squat amount
 constexpr float landingRecoverySpeed = 5.0f; // How fast to recover from landing
-constexpr float breathFrequency = 0.25f;     // Breaths per second when idle
-constexpr float breathAmplitude = 0.003f;    // Subtle breathing motion
+constexpr float breathFrequency = 0.5f;      // Breaths per second when idle
+constexpr float breathAmplitude = 0.0015f;   // Subtle breathing motion
 constexpr float headDamping = 8.0f;          // Smoothness of head movement
 constexpr float velocitySmoothSpeed = 5.0f;  // How fast velocity changes smooth
 
@@ -81,7 +81,8 @@ void UpdatePlayer(float deltaTime) {
   }
 
   // Normalize and apply movement
-  const float moveDirLength = std::sqrt(moveDir.x * moveDir.x + moveDir.z * moveDir.z);
+  const float moveDirLength =
+      std::sqrt(moveDir.x * moveDir.x + moveDir.z * moveDir.z);
   const bool isMoving = moveDirLength > 0.01f;
 
   if (isMoving) {
@@ -93,9 +94,9 @@ void UpdatePlayer(float deltaTime) {
 
   // Smooth velocity for procedural effects
   const float targetVelocity = isMoving ? currentSpeed : 0.0f;
-  velocitySmooth += (targetVelocity - velocitySmooth) * velocitySmoothSpeed * deltaTime;
+  velocitySmooth +=
+      (targetVelocity - velocitySmooth) * velocitySmoothSpeed * deltaTime;
 
-  // === PROCEDURAL HEAD ANIMATION ===
   Vector3 targetHeadOffset{0, 0, 0};
 
   if (velocitySmooth > 0.5f && isGrounded) {
@@ -104,14 +105,18 @@ void UpdatePlayer(float deltaTime) {
     walkCycleTimer += deltaTime * stepFrequency * speedRatio;
 
     using std::numbers::pi_v;
-    const float verticalBob = std::sin(walkCycleTimer * 2.0f * pi_v<float>) * stepHeight * speedRatio;
+    const float verticalBob =
+        std::sin(walkCycleTimer * 2.0f * pi_v<float>) * stepHeight * speedRatio;
 
-    const float lateralSway = std::sin(walkCycleTimer * pi_v<float>) * stepStrideSway * speedRatio;
+    const float lateralSway =
+        std::sin(walkCycleTimer * pi_v<float>) * stepStrideSway * speedRatio;
 
-    const float forwardBob = -std::sin(walkCycleTimer * 2.0f * pi_v<float> + pi_v<float> * 0.5f) *
-                             stepHeight * 0.3f * speedRatio;
+    const float forwardBob =
+        -std::sin(walkCycleTimer * 2.0f * pi_v<float> + pi_v<float> * 0.5f) *
+        stepHeight * 0.3f * speedRatio;
 
-    const float noiseVariation = (smoothNoise(walkCycleTimer * 2.3f) - 0.5f) * 0.01f * speedRatio;
+    const float noiseVariation =
+        (smoothNoise(walkCycleTimer * 2.3f) - 0.5f) * 0.01f * speedRatio;
 
     targetHeadOffset.y = verticalBob + noiseVariation;
     targetHeadOffset.x = lateralSway * right.x;
@@ -125,7 +130,8 @@ void UpdatePlayer(float deltaTime) {
     targetHeadOffset.y = breathCycle * breathAmplitude;
 
     // Very subtle idle sway
-    targetHeadOffset.x = std::sin(breathTimer * pi_v<float> * 0.7f) * breathAmplitude * 0.5f;
+    targetHeadOffset.x =
+        std::sin(breathTimer * pi_v<float> * 0.7f) * breathAmplitude * 0.5f;
   }
 
   // Landing impact
@@ -159,7 +165,8 @@ void UpdatePlayer(float deltaTime) {
   camera.position.y += headOffset.y;
   camera.position.z += headOffset.z;
 
-  const float terrainHeight = getTerrainHeight(camera.position.x, camera.position.z);
+  const float terrainHeight =
+      getTerrainHeight(camera.position.x, camera.position.z);
   const float desiredHeight = terrainHeight + playerHeight;
 
   const bool wasGrounded = isGrounded;
@@ -204,7 +211,7 @@ void UpdatePlayer(float deltaTime) {
     }
   }
 
-  const Vector3 lookForward = {std::sin(cameraYaw) * std::cos(cameraPitch), 
+  const Vector3 lookForward = {std::sin(cameraYaw) * std::cos(cameraPitch),
                                std::sin(cameraPitch),
                                std::cos(cameraYaw) * std::cos(cameraPitch)};
 
