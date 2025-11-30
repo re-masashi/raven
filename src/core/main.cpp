@@ -6,6 +6,7 @@ int main() {
   InitWindow(1080, 720, "The Raven");
   SetWindowState(FLAG_WINDOW_RESIZABLE);
   // SetTargetFPS(60);
+  SetTraceLogLevel(LOG_WARNING);
 
   InitGame();
 
