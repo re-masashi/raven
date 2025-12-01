@@ -12,6 +12,8 @@ out vec4 finalColor;
 uniform vec3 lightDir;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
+uniform vec3 worldCenter;
+uniform float worldRadius;
 
 void main() {
     vec3 norm = normalize(fragNormal);
@@ -25,12 +27,26 @@ void main() {
     vec3 lighting = ambient + diffuse;
     vec3 baseColor = fragColor.rgb * lighting;
     
+    // Calculate distance from world center (XZ plane only)
+    float distFromCenter = length(fragPosition.xz - worldCenter.xz);
+    
+    // Base fog
     float fogStart = 15.0;
     float fogEnd = 80.0;
     vec3 fogColor = vec3(0.3, 0.3, 0.3);
     
-    float fogFactor = 1.0 - exp(-0.04 * max(0.0, fragDistance - fogStart));
-    fogFactor = 0; // clamp(fogFactor, 0.0, 1.0);
+    float baseFogFactor = 0.0; // Default disabled
+    
+    // Boundary fog - increases beyond world radius
+    float boundaryFogFactor = 0.0;
+    if (distFromCenter > worldRadius) {
+        float excessDist = distFromCenter - worldRadius;
+        // Gradually increase fog density as we go beyond boundary
+        boundaryFogFactor = clamp(excessDist / 200.0, 0.0, 0.85);
+        fogColor = mix(fogColor, vec3(0.2, 0.2, 0.25), boundaryFogFactor * 0.5);
+    }
+    
+    float fogFactor = max(baseFogFactor, boundaryFogFactor);
     
     vec3 finalColorRGB = mix(baseColor, fogColor, fogFactor);
     

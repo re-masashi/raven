@@ -16,6 +16,7 @@ Font font{};
 Camera camera{};
 Shader lightingShader{};
 GameState state = GameState::MENU;
+float mouseSensitivity = 0.003f;
 float cameraYaw = 0.0f;
 float cameraPitch = 0.0f;
 int renderDistance = 3;
@@ -55,6 +56,13 @@ void InitGame() {
   SetShaderValue(lightingShader,
                  GetShaderLocation(lightingShader, "lightColor"), &lightColor,
                  SHADER_UNIFORM_VEC3);
+  
+  // Set world boundary uniforms
+  SetShaderValue(lightingShader, GetShaderLocation(lightingShader, "worldCenter"),
+                 &WORLD_CENTER, SHADER_UNIFORM_VEC3);
+  SetShaderValue(lightingShader, GetShaderLocation(lightingShader, "worldRadius"),
+                 &WORLD_RADIUS, SHADER_UNIFORM_FLOAT);
+  
   initializeSpawnHut();
 
   camera.position = {spawnHut.position.x - 15.0f, spawnHut.position.y + 10.0f,
@@ -106,15 +114,17 @@ void UpdateGame() {
 
     // Mouse look
     const Vector2 mouseDelta = GetMouseDelta();
-    constexpr float sensitivity = 0.003f;
-    cameraYaw -= mouseDelta.x * sensitivity;
-    cameraPitch -= mouseDelta.y * sensitivity;
+    cameraYaw -= mouseDelta.x * mouseSensitivity;
+    cameraPitch -= mouseDelta.y * mouseSensitivity;
 
     constexpr float maxPitch = PI / 2.0f - 0.1f;
     cameraPitch = std::clamp(cameraPitch, -maxPitch, maxPitch);
 
     const float deltaTime = GetFrameTime();
     UpdatePlayer(deltaTime);
+
+    // Apply world boundaries (soft/hard push)
+    ApplyWorldBoundaries(deltaTime);
 
     // Teleport to spawn with H key
     if (IsKeyPressed(KEY_H)) {
@@ -174,6 +184,13 @@ void UpdateGame() {
   } else if (state == GameState::SETTINGS) {
     if (IsKeyPressed(KEY_ESCAPE)) {
       state = GameState::MENU;
+    }
+
+    if (IsKeyPressed(KEY_LEFT)) {
+      mouseSensitivity = std::max(0.001f, mouseSensitivity - 0.001f);
+    }
+    if (IsKeyPressed(KEY_RIGHT)) {
+      mouseSensitivity = std::min(0.01f, mouseSensitivity + 0.001f);
     }
   }
 }
@@ -249,6 +266,7 @@ void DrawGame() {
     EndMode3D();
 
     DrawFPSCounter();
+    DrawBoundaryWarning();
 
   } else if (state == GameState::SETTINGS) {
     const int screenWidth = GetScreenWidth();
@@ -260,12 +278,23 @@ void DrawGame() {
                {static_cast<float>(screenWidth) / 2 - titleSize.x / 2, 100.0f},
                30, 1.0f, WHITE);
 
-    constexpr const char *placeholder = "Settings coming soon...";
-    const Vector2 textSize = MeasureTextEx(font, placeholder, 20, 1.0f);
-    DrawTextEx(font, placeholder,
-               {static_cast<float>(screenWidth) / 2 - textSize.x / 2,
+    const std::string sensitivityText =
+        std::format("Mouse Sensitivity: {:.3f}", mouseSensitivity);
+    const Vector2 sensitivityTextSize =
+        MeasureTextEx(font, sensitivityText.c_str(), 20, 1.0f);
+    DrawTextEx(font, sensitivityText.c_str(),
+               {static_cast<float>(screenWidth) / 2 - sensitivityTextSize.x / 2,
                 static_cast<float>(screenHeight) / 2},
                20, 1.0f, LIGHTGRAY);
+
+    const std::string instructionsText = "Use LEFT/RIGHT arrows to change";
+    const Vector2 instructionsTextSize =
+        MeasureTextEx(font, instructionsText.c_str(), 16, 1.0f);
+    DrawTextEx(
+        font, instructionsText.c_str(),
+        {static_cast<float>(screenWidth) / 2 - instructionsTextSize.x / 2,
+         static_cast<float>(screenHeight) / 2 + 30},
+        16, 1.0f, GRAY);
 
     constexpr const char *escText = "Press ESC to return";
     const Vector2 escSize = MeasureTextEx(font, escText, 16, 1.0f);

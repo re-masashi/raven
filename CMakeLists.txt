@@ -16,6 +16,7 @@ add_executable(raven
  src/game/sky.cpp
  src/game/vegetation.cpp
  src/game/water.cpp
+ src/game/worldBoundaries.cpp
 )
 
 target_link_libraries(raven PRIVATE raylib)
