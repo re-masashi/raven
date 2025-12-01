@@ -738,9 +738,10 @@ Player can interact with Lenore's belongings:
 - [ ] Define world center (0, 0, 0)
 - [ ] Define world radius (750 units)
 - [ ] Implement soft boundary system:
-- [ ] Increase fog density beyond radius
-- [ ] Add gentle physics push toward center
-- [ ] Display warning text when far from center
+    - [ ] Increase fog density beyond radius
+    - [ ] Add gentle physics push toward center
+    - [ ] If distance is more than 100 units across border, strong push them back
+    - [ ] Display warning text when far from center
 
 **Debug Tools:**
 - [ ] Draw world boundary circle

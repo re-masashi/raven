@@ -72,6 +72,15 @@ void UnloadWater();
 
 void DrawFPSCounter();
 
+// World boundaries
+constexpr Vector3 WORLD_CENTER = {0.0f, 0.0f, 0.0f};
+constexpr float WORLD_RADIUS = 750.0f;
+constexpr float SOFT_BOUNDARY_START = 650.0f; // Start gentle push
+constexpr float HARD_BOUNDARY_START = 850.0f; // Strong push back (100 units past radius)
+
+void ApplyWorldBoundaries(float deltaTime);
+void DrawBoundaryWarning();
+
 // Global structures
 inline Structure spawnHut;
 inline Model hutModel;
