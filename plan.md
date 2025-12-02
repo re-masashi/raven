@@ -753,10 +753,10 @@ Player can interact with Lenore's belongings:
 #### **Week 3: Basic Interaction**
 
 **Interaction System:**
-- [x] Create WorldObject type API
-- [x] Add distance checking (player within 3 or 5 units)
-- [x] Interaction prompt event handler
-- [x] Trigger prompt event action (print for now)
+- [ ] Create WorldObject type API
+- [ ] Add distance checking (player within 3 or 5 units)
+- [ ] Interaction prompt event handler
+- [ ] Trigger prompt event action (print for now)
 
 **Object Placement:**
 - [ ] Manually place 5-10 test objects in world
