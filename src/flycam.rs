@@ -89,8 +89,9 @@ fn player_move(
     primary_cursor_options: Single<&mut CursorOptions, With<PrimaryWindow>>,
     settings: Res<MovementSettings>,
     key_bindings: Res<KeyBindings>,
-    mut query: Query<(&FlyCam, &mut Transform)>, //    mut query: Query<&mut Transform, With<FlyCam>>,
+    mut query: Query<(&FlyCam, &mut Transform)>,
 ) {
+    let _span = tracing::span!(tracing::Level::INFO, "player_move").entered();
     for (_camera, mut transform) in query.iter_mut() {
         let mut velocity = Vec3::ZERO;
         let local_z = transform.local_z();

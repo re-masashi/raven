@@ -3,17 +3,28 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use raven::flycam::*;
 use raven::terrain::*;
+use tracing_subscriber::prelude::*;
 
 fn main() {
+    let subscriber = tracing_subscriber::Registry::default().with(tracing_tracy::TracyLayer::new(
+        tracing_tracy::DefaultConfig::default(),
+    ));
+
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("set global tracing subscriber failed");
+
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(bevy::log::LogPlugin {
+            filter: "raven=info,warn".into(),
+            ..default()
+        }))
         .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(PlayerPlugin)
         .add_plugins(TerrainPlugin)
         .insert_resource(MovementSettings {
             sensitivity: 0.00015,
-            speed: 12.0,
+            speed: 50.0,
         })
         .add_systems(Startup, (setup, setup_fps_counter))
         .add_systems(Update, update_fps_counter)

@@ -13,7 +13,7 @@ pub mod prelude {
     pub use crate::*;
 }
 
-const CHUNK_SIZE: usize = 128;
+const CHUNK_SIZE: usize = 96;
 const CHUNK_SCALE: f32 = 2.0;
 const HEIGHT_SCALE: f32 = 1.0;
 const RENDER_DISTANCE: i32 = 4;
@@ -72,7 +72,8 @@ impl TerrainGenerator {
         }
     }
 
-    fn get_height(&self, x: f64, z: f64) -> f32 {
+    pub fn get_height(&self, x: f64, z: f64) -> f32 {
+        let _span = tracing::span!(tracing::Level::INFO, "get_height").entered();
         let scale = 0.002;
 
         let base = self.base_terrain.get([x * scale, z * scale]) as f32;
@@ -124,6 +125,9 @@ enum ChunkLOD {
 #[derive(Resource)]
 struct LoadedChunks(HashMap<(i32, i32), Entity>);
 
+#[derive(Resource)]
+struct TerrainMaterial(Handle<StandardMaterial>);
+
 pub struct TerrainPlugin;
 
 impl Plugin for TerrainPlugin {
@@ -154,6 +158,8 @@ fn setup_terrain(
         ..default()
     });
 
+    commands.insert_resource(TerrainMaterial(material.clone()));
+
     for x in -config.render_distance..=config.render_distance {
         for z in -config.render_distance..=config.render_distance {
             spawn_chunk(
@@ -176,9 +182,10 @@ fn update_terrain(
     mut loaded_chunks: ResMut<LoadedChunks>,
     generator: Res<TerrainGenerator>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    terrain_material: Res<TerrainMaterial>,
     cameras: Query<&Transform, With<bevy::prelude::Camera>>,
 ) {
+    let _span = tracing::span!(tracing::Level::INFO, "update_terrain").entered();
     let camera_transform = match cameras.single() {
         Ok(t) => t,
         Err(_) => return,
@@ -222,18 +229,14 @@ fn update_terrain(
         commands.entity(*entity).despawn();
     }
 
-    let material = materials.add(StandardMaterial {
-        unlit: true,
-        ..default()
-    });
-
+    let _spawn_span = tracing::span!(tracing::Level::INFO, "spawn_chunks").entered();
     for (x, z) in chunks_to_add {
         spawn_chunk(
             &mut commands,
             &config,
             &generator,
             &mut meshes,
-            material.clone(),
+            terrain_material.0.clone(),
             x,
             z,
             &mut loaded_chunks,
@@ -255,6 +258,7 @@ fn spawn_chunk(
     chunk_z: i32,
     loaded_chunks: &mut LoadedChunks,
 ) {
+    let _span = tracing::span!(tracing::Level::INFO, "spawn_chunk", chunk_x, chunk_z).entered();
     let mesh = generate_chunk_mesh(config, generator, chunk_x, chunk_z, ChunkLOD::High);
     let mesh_handle = meshes.add(mesh);
 
@@ -285,6 +289,14 @@ fn generate_chunk_mesh(
     chunk_z: i32,
     lod: ChunkLOD,
 ) -> Mesh {
+    let _span = tracing::span!(
+        tracing::Level::INFO,
+        "generate_chunk_mesh",
+        chunk_x,
+        chunk_z,
+        ?lod
+    )
+    .entered();
     let step = match lod {
         ChunkLOD::High => 1,
         ChunkLOD::Medium => 2,
@@ -304,6 +316,7 @@ fn generate_chunk_mesh(
     let mut all_positions = Vec::with_capacity((expanded_grid_size + 1) * (expanded_grid_size + 1));
     let mut all_heights = Vec::with_capacity((expanded_grid_size + 1) * (expanded_grid_size + 1));
 
+    let _height_span = tracing::span!(tracing::Level::INFO, "calculate_heights").entered();
     for z in (0..=expanded_size).step_by(step) {
         for x in (0..=expanded_size).step_by(step) {
             let world_x = offset_x + (x as f32 - border as f32) * config.chunk_scale;
@@ -314,6 +327,7 @@ fn generate_chunk_mesh(
             all_positions.push([world_x - offset_x, height, world_z - offset_z]);
         }
     }
+    drop(_height_span);
 
     let mut all_indices = Vec::new();
     for z in 0..expanded_grid_size {
@@ -342,6 +356,7 @@ fn generate_chunk_mesh(
     let mut colors = Vec::with_capacity(num_vertices);
     let mut indices = Vec::with_capacity(num_indices);
 
+    let _vertex_span = tracing::span!(tracing::Level::INFO, "build_vertices").entered();
     for z in (0..=size).step_by(step) {
         for x in (0..=size).step_by(step) {
             let expanded_z = (z + border) / step;
@@ -365,6 +380,7 @@ fn generate_chunk_mesh(
             colors.push([color.x, color.y, color.z, 1.0]);
         }
     }
+    drop(_vertex_span);
 
     for z in 0..grid_size {
         for x in 0..grid_size {
@@ -392,6 +408,12 @@ fn generate_chunk_mesh(
 }
 
 fn calculate_normals(positions: &[[f32; 3]], indices: &[u32], normals: &mut [[f32; 3]]) {
+    let _span = tracing::span!(
+        tracing::Level::INFO,
+        "calculate_normals",
+        num_indices = indices.len()
+    )
+    .entered();
     for i in (0..indices.len()).step_by(3) {
         let i0 = indices[i] as usize;
         let i1 = indices[i + 1] as usize;
@@ -498,6 +520,7 @@ fn frustum_cull_chunks(
     >,
     cameras: Query<(&GlobalTransform, &Projection, &Camera)>,
 ) {
+    let _span = tracing::span!(tracing::Level::INFO, "frustum_cull_chunks").entered();
     let (camera_transform, projection, _camera) = match cameras.single() {
         Ok(c) => c,
         Err(_) => return,
@@ -543,6 +566,7 @@ fn update_chunk_lod(
     >,
     cameras: Query<&GlobalTransform, With<bevy::prelude::Camera>>,
 ) {
+    let _span = tracing::span!(tracing::Level::INFO, "update_chunk_lod").entered();
     let camera_transform = match cameras.single() {
         Ok(t) => t,
         Err(_) => return,
@@ -558,10 +582,10 @@ fn update_chunk_lod(
         let distance = camera_pos.distance(chunk_center) / chunk_world_size;
 
         let new_lod = match (distance, *lod) {
-            (d, ChunkLOD::High) if d > 2.0 => ChunkLOD::Medium,
-            (d, ChunkLOD::Medium) if d < 1.0 => ChunkLOD::High,
-            (d, ChunkLOD::Medium) if d > 4.0 => ChunkLOD::Low,
-            (d, ChunkLOD::Low) if d < 2.5 => ChunkLOD::Medium,
+            (d, ChunkLOD::High) if d > 3.0 => ChunkLOD::Medium,
+            (d, ChunkLOD::Medium) if d < 2.0 => ChunkLOD::High,
+            (d, ChunkLOD::Medium) if d > 6.0 => ChunkLOD::Low,
+            (d, ChunkLOD::Low) if d < 4.5 => ChunkLOD::Medium,
             _ => *lod,
         };
 
