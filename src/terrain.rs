@@ -293,31 +293,72 @@ fn generate_chunk_mesh(
 
     let size = config.chunk_size;
     let grid_size = size / step;
-    let num_vertices = (grid_size + 1) * (grid_size + 1);
-    let num_indices = grid_size * grid_size * 6;
-
-    let mut positions = Vec::with_capacity(num_vertices);
-    let mut normals = vec![[0.0f32; 3]; num_vertices];
-    let mut uvs = Vec::with_capacity(num_vertices);
-    let mut colors = Vec::with_capacity(num_vertices);
-    let mut indices = Vec::with_capacity(num_indices);
 
     let offset_x = chunk_x as f32 * size as f32 * config.chunk_scale;
     let offset_z = chunk_z as f32 * size as f32 * config.chunk_scale;
 
-    let mut heights = Vec::with_capacity(num_vertices);
+    let border = step;
+    let expanded_size = size + border * 2;
+    let expanded_grid_size = expanded_size / step;
+
+    let mut all_positions = Vec::with_capacity((expanded_grid_size + 1) * (expanded_grid_size + 1));
+    let mut all_heights = Vec::with_capacity((expanded_grid_size + 1) * (expanded_grid_size + 1));
+
+    for z in (0..=expanded_size).step_by(step) {
+        for x in (0..=expanded_size).step_by(step) {
+            let world_x = offset_x + (x as f32 - border as f32) * config.chunk_scale;
+            let world_z = offset_z + (z as f32 - border as f32) * config.chunk_scale;
+
+            let height = generator.get_height(world_x as f64, world_z as f64);
+            all_heights.push(height);
+            all_positions.push([world_x - offset_x, height, world_z - offset_z]);
+        }
+    }
+
+    let mut all_indices = Vec::new();
+    for z in 0..expanded_grid_size {
+        for x in 0..expanded_grid_size {
+            let i = z * (expanded_grid_size + 1) + x;
+
+            all_indices.push(i as u32);
+            all_indices.push((i + expanded_grid_size + 2) as u32);
+            all_indices.push((i + 1) as u32);
+
+            all_indices.push(i as u32);
+            all_indices.push((i + expanded_grid_size + 1) as u32);
+            all_indices.push((i + expanded_grid_size + 2) as u32);
+        }
+    }
+
+    let mut all_normals = vec![[0.0f32; 3]; all_positions.len()];
+    calculate_normals(&all_positions, &all_indices, &mut all_normals);
+
+    let num_vertices = (grid_size + 1) * (grid_size + 1);
+    let num_indices = grid_size * grid_size * 6;
+
+    let mut positions = Vec::with_capacity(num_vertices);
+    let mut normals = Vec::with_capacity(num_vertices);
+    let mut uvs = Vec::with_capacity(num_vertices);
+    let mut colors = Vec::with_capacity(num_vertices);
+    let mut indices = Vec::with_capacity(num_indices);
 
     for z in (0..=size).step_by(step) {
         for x in (0..=size).step_by(step) {
-            let world_x = offset_x + x as f32 * config.chunk_scale;
-            let world_z = offset_z + z as f32 * config.chunk_scale;
+            let expanded_z = (z + border) / step;
+            let expanded_x = (x + border) / step;
+            let expanded_idx = expanded_z * (expanded_grid_size + 1) + expanded_x;
 
-            let height = generator.get_height(world_x as f64, world_z as f64);
-            heights.push(height);
+            let pos = all_positions[expanded_idx];
+            positions.push(pos);
 
-            positions.push([world_x - offset_x, height, world_z - offset_z]);
+            let normal = all_normals[expanded_idx];
+            normals.push(normal);
+
             uvs.push([x as f32 / size as f32, z as f32 / size as f32]);
 
+            let world_x = offset_x + x as f32 * config.chunk_scale;
+            let world_z = offset_z + z as f32 * config.chunk_scale;
+            let height = pos[1];
             let moisture = generator.get_moisture(world_x as f64, world_z as f64);
             let temperature = generator.get_temperature(world_x as f64, world_z as f64, height);
             let color = get_terrain_color(height, moisture, temperature);
@@ -338,8 +379,6 @@ fn generate_chunk_mesh(
             indices.push((i + grid_size + 2) as u32);
         }
     }
-
-    calculate_normals(&positions, &indices, &mut normals);
 
     Mesh::new(
         PrimitiveTopology::TriangleList,
