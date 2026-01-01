@@ -42,6 +42,7 @@ impl Default for TerrainConfig {
 
 #[derive(Resource)]
 struct TerrainGenerator {
+    large_terrain: Fbm<Perlin>,
     base_terrain: Fbm<Perlin>,
     mountain_noise: Fbm<Perlin>,
     detail_noise: Fbm<Perlin>,
@@ -53,6 +54,10 @@ impl TerrainGenerator {
     fn new(seed: u32) -> Self {
         let fixed_seed = seed;
         Self {
+            large_terrain: Fbm::new(fixed_seed.wrapping_add(5))
+                .set_octaves(3)
+                .set_lacunarity(2.0)
+                .set_persistence(0.8),
             base_terrain: Fbm::new(fixed_seed)
                 .set_octaves(6)
                 .set_lacunarity(2.0)
@@ -77,15 +82,17 @@ impl TerrainGenerator {
         let _span = tracing::span!(tracing::Level::INFO, "get_height").entered();
         let scale = 0.002;
 
+        let large = self.large_terrain.get([x * 0.0008, z * 0.0008]) as f32;
         let base = self.base_terrain.get([x * scale, z * scale]) as f32;
         let mountain_raw = self.mountain_noise.get([x * scale * 0.6, z * scale * 0.6]) as f32;
         let mountain = smooth_curve(((mountain_raw + 1.0) * 0.5).clamp(0.0, 0.8));
         let detail = self.detail_noise.get([x * scale * 4.0, z * scale * 4.0]) as f32 * 0.01;
 
+        let large_height = large * 40.0;
         let base_height = base * 70.0;
         let mountain_height = mountain * 75.0;
 
-        let height = base_height.lerp(mountain_height, mountain * 0.25);
+        let height = (base_height + large_height).lerp(mountain_height, mountain * 0.25);
 
         let result = height + detail + 8.0;
         result.clamp(-3.0, 80.0)
@@ -335,6 +342,30 @@ fn generate_chunk_mesh(
         }
     }
     drop(_height_span);
+
+    // Apply very mild smoothing to reduce sharp transitions
+    let points_per_row = expanded_grid_size + 1;
+    let mut smoothed_heights = all_heights.clone();
+    for z in 1..expanded_grid_size - 1 {
+        for x in 1..expanded_grid_size - 1 {
+            let idx = z * points_per_row + x;
+            let neighbors = [
+                all_heights[(z - 1) * points_per_row + x],
+                all_heights[z * points_per_row + (x - 1)],
+                all_heights[z * points_per_row + (x + 1)],
+                all_heights[(z + 1) * points_per_row + x],
+            ];
+            let avg_neighbor = (neighbors[0] + neighbors[1] + neighbors[2] + neighbors[3]) / 4.0;
+            smoothed_heights[idx] = all_heights[idx] * 0.9 + avg_neighbor * 0.1;
+            // Very mild smoothing
+        }
+    }
+    all_heights = smoothed_heights;
+
+    // Update positions with smoothed heights
+    for i in 0..all_positions.len() {
+        all_positions[i][1] = all_heights[i];
+    }
 
     let mut all_indices = Vec::new();
     for z in 0..expanded_grid_size {
