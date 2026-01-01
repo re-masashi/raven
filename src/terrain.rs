@@ -1,11 +1,12 @@
 use bevy::{
     asset::RenderAssetUsages,
     camera::CameraProjection,
-    math::{bounding::Aabb3d, Vec3A},
+    math::{Vec3A, bounding::Aabb3d},
     mesh::{Indices, Mesh},
     prelude::*,
     render::render_resource::PrimitiveTopology,
 };
+use bevy_rapier3d::prelude::*;
 use noise::{Fbm, MultiFractal, NoiseFn, Perlin};
 use std::collections::HashMap;
 
@@ -260,7 +261,7 @@ fn spawn_chunk(
 ) {
     let _span = tracing::span!(tracing::Level::INFO, "spawn_chunk", chunk_x, chunk_z).entered();
     let mesh = generate_chunk_mesh(config, generator, chunk_x, chunk_z, ChunkLOD::High);
-    let mesh_handle = meshes.add(mesh);
+    let mesh_handle = meshes.add(mesh.clone());
 
     let world_x = chunk_x as f32 * config.chunk_size as f32 * config.chunk_scale;
     let world_z = chunk_z as f32 * config.chunk_size as f32 * config.chunk_scale;
@@ -276,6 +277,12 @@ fn spawn_chunk(
             },
             TerrainChunk,
             ChunkLOD::High,
+            RigidBody::Fixed,
+            Collider::from_bevy_mesh(
+                &mesh,
+                &ComputedColliderShape::TriMesh(TriMeshFlags::default()),
+            )
+            .unwrap(),
         ))
         .id();
 
