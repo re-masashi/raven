@@ -173,8 +173,6 @@ fn player_move(
     mut player_query: Query<(&mut Velocity, &PlayerState), With<RigidBody>>,
     camera_query: Query<&Transform, With<FlyCam>>,
 ) {
-    let _span = tracing::span!(tracing::Level::INFO, "player_move").entered();
-
     let Ok(camera_transform) = camera_query.single() else {
         return;
     };

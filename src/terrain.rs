@@ -1,7 +1,7 @@
 use bevy::{
     asset::RenderAssetUsages,
     camera::CameraProjection,
-    math::{bounding::Aabb3d, Vec3A},
+    math::{Vec3A, bounding::Aabb3d},
     mesh::{Indices, Mesh},
     prelude::*,
     render::render_resource::PrimitiveTopology,
@@ -84,7 +84,6 @@ impl TerrainGenerator {
     }
 
     pub fn get_height(&self, x: f64, z: f64) -> f32 {
-        let _span = tracing::span!(tracing::Level::INFO, "get_height").entered();
         let scale = 0.002;
 
         let large = self.large_terrain.get([x * 0.0008, z * 0.0008]) as f32;
@@ -208,7 +207,6 @@ fn update_terrain(
     terrain_material: Res<TerrainMaterial>,
     cameras: Query<&Transform, With<bevy::prelude::Camera>>,
 ) {
-    let _span = tracing::span!(tracing::Level::INFO, "update_terrain").entered();
     let camera_transform = match cameras.single() {
         Ok(t) => t,
         Err(_) => return,
@@ -252,7 +250,6 @@ fn update_terrain(
         commands.entity(*entity).despawn();
     }
 
-    let _spawn_span = tracing::span!(tracing::Level::INFO, "spawn_chunks").entered();
     for (x, z) in chunks_to_add {
         spawn_chunk(
             &mut commands,
@@ -281,7 +278,6 @@ fn spawn_chunk(
     chunk_z: i32,
     loaded_chunks: &mut LoadedChunks,
 ) {
-    let _span = tracing::span!(tracing::Level::INFO, "spawn_chunk", chunk_x, chunk_z).entered();
     let mesh = generate_chunk_mesh(config, generator, chunk_x, chunk_z, ChunkLOD::High);
     let mesh_handle = meshes.add(mesh.clone());
 
@@ -318,14 +314,6 @@ fn generate_chunk_mesh(
     chunk_z: i32,
     lod: ChunkLOD,
 ) -> Mesh {
-    let _span = tracing::span!(
-        tracing::Level::INFO,
-        "generate_chunk_mesh",
-        chunk_x,
-        chunk_z,
-        ?lod
-    )
-    .entered();
     let step = match lod {
         ChunkLOD::High => 1,
         ChunkLOD::Medium => 2,
@@ -345,7 +333,6 @@ fn generate_chunk_mesh(
     let mut all_positions = Vec::with_capacity((expanded_grid_size + 1) * (expanded_grid_size + 1));
     let mut all_heights = Vec::with_capacity((expanded_grid_size + 1) * (expanded_grid_size + 1));
 
-    let _height_span = tracing::span!(tracing::Level::INFO, "calculate_heights").entered();
     for z in (0..=expanded_size).step_by(step) {
         for x in (0..=expanded_size).step_by(step) {
             let world_x = offset_x + (x as f32 - border as f32) * config.chunk_scale;
@@ -356,7 +343,6 @@ fn generate_chunk_mesh(
             all_positions.push([world_x - offset_x, height, world_z - offset_z]);
         }
     }
-    drop(_height_span);
 
     // Apply very mild smoothing to reduce sharp transitions
     let points_per_row = expanded_grid_size + 1;
@@ -409,7 +395,6 @@ fn generate_chunk_mesh(
     let mut colors = Vec::with_capacity(num_vertices);
     let mut indices = Vec::with_capacity(num_indices);
 
-    let _vertex_span = tracing::span!(tracing::Level::INFO, "build_vertices").entered();
     for z in (0..=size).step_by(step) {
         for x in (0..=size).step_by(step) {
             let expanded_z = (z + border) / step;
@@ -433,7 +418,6 @@ fn generate_chunk_mesh(
             colors.push([color.x, color.y, color.z, 1.0]);
         }
     }
-    drop(_vertex_span);
 
     for z in 0..grid_size {
         for x in 0..grid_size {
@@ -461,12 +445,6 @@ fn generate_chunk_mesh(
 }
 
 fn calculate_normals(positions: &[[f32; 3]], indices: &[u32], normals: &mut [[f32; 3]]) {
-    let _span = tracing::span!(
-        tracing::Level::INFO,
-        "calculate_normals",
-        num_indices = indices.len()
-    )
-    .entered();
     for i in (0..indices.len()).step_by(3) {
         let i0 = indices[i] as usize;
         let i1 = indices[i + 1] as usize;
@@ -573,7 +551,6 @@ fn frustum_cull_chunks(
     >,
     cameras: Query<(&GlobalTransform, &Projection, &Camera)>,
 ) {
-    let _span = tracing::span!(tracing::Level::INFO, "frustum_cull_chunks").entered();
     let (camera_transform, projection, _camera) = match cameras.single() {
         Ok(c) => c,
         Err(_) => return,
@@ -619,7 +596,6 @@ fn update_chunk_lod(
     >,
     cameras: Query<&GlobalTransform, With<bevy::prelude::Camera>>,
 ) {
-    let _span = tracing::span!(tracing::Level::INFO, "update_chunk_lod").entered();
     let camera_transform = match cameras.single() {
         Ok(t) => t,
         Err(_) => return,

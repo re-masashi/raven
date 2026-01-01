@@ -3,25 +3,19 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use raven::flycam::*;
 use raven::terrain::*;
-use tracing_subscriber::prelude::*;
+use raven::ui::*;
 
 fn main() {
-    let subscriber = tracing_subscriber::Registry::default().with(tracing_tracy::TracyLayer::new(
-        tracing_tracy::DefaultConfig::default(),
-    ));
-
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("set global tracing subscriber failed");
-
     App::new()
         .add_plugins(DefaultPlugins.set(bevy::log::LogPlugin {
-            filter: "raven=info,warn".into(),
+            filter: "raven=debug,warn".into(),
             ..default()
         }))
         .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(PlayerPlugin)
         .add_plugins(TerrainPlugin)
+        .add_plugins(HomeScreenPlugin)
         .insert_resource(MovementSettings {
             sensitivity: 0.00015,
             speed: 12.0,
@@ -30,7 +24,7 @@ fn main() {
         })
         .add_systems(Startup, (setup, setup_fps_counter, setup_water))
         .add_systems(Update, (update_fps_counter, check_water_status))
-        .insert_resource(ClearColor(Color::srgb(0.3, 0.6, 0.75)))
+        .insert_resource(ClearColor(Color::srgb(0.1, 0.1, 0.15)))
         .run();
 }
 
