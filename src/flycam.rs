@@ -20,6 +20,10 @@ pub struct MovementSettings {
     pub fall_gravity_scale: f32,
     pub jump_hold_gravity_scale: f32,
     pub coyote_time: f32,
+    pub water_level: f32,
+    pub swim_speed: f32,
+    pub buoyancy: f32,
+    pub water_drag: f32,
 }
 
 impl Default for MovementSettings {
@@ -34,6 +38,10 @@ impl Default for MovementSettings {
             fall_gravity_scale: 1.5,
             jump_hold_gravity_scale: 0.5,
             coyote_time: 0.15,
+            water_level: 0.0,
+            swim_speed: 8.0,
+            buoyancy: 15.0,
+            water_drag: 0.95,
         }
     }
 }
@@ -75,6 +83,7 @@ pub struct PlayerState {
     pub time_since_grounded: f32,
     pub jump_hold_time: f32,
     pub has_jumped: bool,
+    pub in_water: bool,
 }
 
 /// Grabs/ungrabs mouse cursor
@@ -116,8 +125,12 @@ fn setup_player(mut commands: Commands) {
 }
 
 /// Updates player state (grounded detection, coyote time, etc.)
-fn player_state_update(time: Res<Time>, mut player_query: Query<(&mut PlayerState, &Velocity)>) {
-    for (mut state, velocity) in player_query.iter_mut() {
+fn player_state_update(
+    time: Res<Time>,
+    settings: Res<MovementSettings>,
+    mut player_query: Query<(&mut PlayerState, &Velocity, &Transform)>,
+) {
+    for (mut state, velocity, transform) in player_query.iter_mut() {
         let was_grounded = state.is_grounded;
 
         if velocity.linvel.y.abs() < 0.1 && velocity.linvel.y >= -1.0 {
@@ -130,6 +143,23 @@ fn player_state_update(time: Res<Time>, mut player_query: Query<(&mut PlayerStat
         } else {
             state.is_grounded = false;
             state.time_since_grounded += time.delta_secs();
+        }
+
+        state.in_water = transform.translation.y < settings.water_level;
+    }
+}
+
+/// Applies buoyancy when player is in water
+fn apply_buoyancy(
+    settings: Res<MovementSettings>,
+    mut player_query: Query<(&PlayerState, &mut Velocity, &Transform)>,
+) {
+    for (state, mut velocity, transform) in player_query.iter_mut() {
+        if state.in_water {
+            let water_depth = (settings.water_level - transform.translation.y).max(0.0);
+            let buoyancy_force = settings.buoyancy * water_depth.min(2.0);
+            velocity.linvel.y += buoyancy_force * 0.016;
+            velocity.linvel *= settings.water_drag;
         }
     }
 }
@@ -150,10 +180,12 @@ fn player_move(
     };
 
     let local_z = camera_transform.local_z();
-    let forward = -Vec3::new(local_z.x, 0., local_z.z).normalize();
+    let mut forward = -Vec3::new(local_z.x, 0., local_z.z).normalize();
     let right = Vec3::new(local_z.z, 0., -local_z.x).normalize();
+    let up = Vec3::Y;
 
     let mut move_input = Vec3::ZERO;
+    let mut vertical_input = 0.0f32;
 
     for key in keys.get_pressed() {
         match primary_cursor_options.grab_mode {
@@ -168,13 +200,53 @@ fn player_move(
                     move_input -= right;
                 } else if key == key_bindings.move_right {
                     move_input += right;
+                } else if key == KeyCode::KeyQ {
+                    vertical_input -= 1.0;
+                } else if key == KeyCode::KeyE {
+                    vertical_input += 1.0;
                 }
             }
         }
     }
 
     for (mut velocity, state) in player_query.iter_mut() {
-        if move_input != Vec3::ZERO {
+        if state.in_water {
+            forward = -local_z.normalize();
+            move_input = Vec3::ZERO;
+            vertical_input = 0.0;
+
+            for key in keys.get_pressed() {
+                match primary_cursor_options.grab_mode {
+                    CursorGrabMode::None => (),
+                    _ => {
+                        let key = *key;
+                        if key == key_bindings.move_forward {
+                            move_input += forward;
+                        } else if key == key_bindings.move_backward {
+                            move_input -= forward;
+                        } else if key == key_bindings.move_left {
+                            move_input -= right;
+                        } else if key == key_bindings.move_right {
+                            move_input += right;
+                        } else if key == KeyCode::KeyQ {
+                            vertical_input -= 1.0;
+                        } else if key == KeyCode::KeyE {
+                            vertical_input += 1.0;
+                        }
+                    }
+                }
+            }
+
+            if move_input != Vec3::ZERO || vertical_input != 0.0 {
+                let speed = settings.swim_speed;
+                let target =
+                    (move_input.normalize_or_zero() + up * vertical_input).normalize() * speed;
+                let accel = 0.1;
+                velocity.linvel = velocity.linvel.lerp(target, accel);
+            } else {
+                velocity.linvel *= 0.95;
+            }
+        } else if move_input != Vec3::ZERO {
             let ground_speed = if keys.pressed(key_bindings.sprint) {
                 settings.sprint_speed
             } else {
@@ -244,6 +316,11 @@ fn player_jump(
     let jump_just_pressed = keys.just_pressed(key_bindings.jump);
 
     for (mut velocity, mut state, mut gravity_scale) in player_query.iter_mut() {
+        if state.in_water {
+            gravity_scale.0 = 0.2;
+            continue;
+        }
+
         if jump_just_pressed
             && (state.is_grounded || state.time_since_grounded < settings.coyote_time)
             && !state.has_jumped
@@ -304,7 +381,8 @@ impl Plugin for PlayerPlugin {
             .add_systems(Update, player_move)
             .add_systems(Update, player_look)
             .add_systems(Update, player_jump)
-            .add_systems(Update, cursor_grab);
+            .add_systems(Update, cursor_grab)
+            .add_systems(Update, apply_buoyancy);
     }
 }
 
@@ -320,6 +398,7 @@ impl Plugin for NoCameraPlayerPlugin {
             .add_systems(Update, player_move)
             .add_systems(Update, player_look)
             .add_systems(Update, player_jump)
-            .add_systems(Update, cursor_grab);
+            .add_systems(Update, cursor_grab)
+            .add_systems(Update, apply_buoyancy);
     }
 }

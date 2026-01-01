@@ -28,8 +28,8 @@ fn main() {
             sprint_speed: 24.0,
             ..default()
         })
-        .add_systems(Startup, (setup, setup_fps_counter))
-        .add_systems(Update, update_fps_counter)
+        .add_systems(Startup, (setup, setup_fps_counter, setup_water))
+        .add_systems(Update, (update_fps_counter, check_water_status))
         .insert_resource(ClearColor(Color::srgb(0.3, 0.6, 0.75)))
         .run();
 }
@@ -55,6 +55,12 @@ fn setup(mut commands: Commands) {
 #[derive(Component)]
 struct FpsText;
 
+#[derive(Component)]
+struct WaterStatusText;
+
+#[derive(Component)]
+struct WaterPlane;
+
 fn setup_fps_counter(mut commands: Commands) {
     commands.spawn((
         Node {
@@ -71,6 +77,66 @@ fn setup_fps_counter(mut commands: Commands) {
         TextColor(Color::WHITE),
         FpsText,
     ));
+}
+
+fn setup_water(
+    mut commands: Commands,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    let water_material = materials.add(StandardMaterial {
+        base_color: Color::srgba(0.1, 0.4, 0.7, 0.5),
+        unlit: false,
+        perceptual_roughness: 0.1,
+        metallic: 0.1,
+        alpha_mode: AlphaMode::Blend,
+        ..default()
+    });
+
+    commands.spawn((
+        Mesh3d(meshes.add(Mesh::from(Plane3d::new(
+            Vec3::Y,
+            Vec2::new(10000.0, 10000.0),
+        )))),
+        MeshMaterial3d(water_material),
+        Transform::from_xyz(0.0, 0.0, 0.0),
+        WaterPlane,
+    ));
+}
+
+fn check_water_status(
+    mut commands: Commands,
+    player_query: Query<&Transform, With<FlyCam>>,
+    mut water_status_query: Query<&mut Text, With<WaterStatusText>>,
+) {
+    let in_water = match player_query.single() {
+        Ok(transform) => transform.translation.y < 0.0,
+        Err(_) => return,
+    };
+
+    if let Ok(mut text) = water_status_query.single_mut() {
+        if in_water {
+            text.0 = "IN WATER".to_string();
+        } else {
+            text.0 = String::new();
+        }
+    } else if in_water {
+        commands.spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(50.0),
+                left: Val::Px(10.0),
+                ..default()
+            },
+            Text::new("IN WATER"),
+            TextFont {
+                font_size: 24.0,
+                ..default()
+            },
+            TextColor(Color::srgb(0.5, 0.8, 1.0)),
+            WaterStatusText,
+        ));
+    }
 }
 
 fn update_fps_counter(

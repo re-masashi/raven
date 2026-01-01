@@ -48,6 +48,7 @@ struct TerrainGenerator {
     detail_noise: Fbm<Perlin>,
     moisture: Fbm<Perlin>,
     temperature: Perlin,
+    underwater_noise: Fbm<Perlin>,
 }
 
 impl TerrainGenerator {
@@ -75,6 +76,10 @@ impl TerrainGenerator {
                 .set_lacunarity(2.0)
                 .set_persistence(0.5),
             temperature: Perlin::new(fixed_seed.wrapping_add(4)),
+            underwater_noise: Fbm::new(fixed_seed.wrapping_add(6))
+                .set_octaves(3)
+                .set_lacunarity(1.5)
+                .set_persistence(0.4),
         }
     }
 
@@ -94,7 +99,17 @@ impl TerrainGenerator {
 
         let height = (base_height + large_height).lerp(mountain_height, mountain * 0.25);
 
-        let result = height + detail + 8.0;
+        let mut result = height + detail + 8.0;
+
+        let underwater_raw = self.underwater_noise.get([x * 0.0005, z * 0.0005]) as f32;
+        let underwater_factor = smooth_curve((underwater_raw + 1.0) * 0.5);
+
+        if result < 0.0 {
+            let water_depth = (-result).min(10.0);
+            let dip = underwater_factor * 2.0 * water_depth;
+            result -= dip;
+        }
+
         result.clamp(-3.0, 80.0)
     }
 
