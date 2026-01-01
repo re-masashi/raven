@@ -1,5 +1,6 @@
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
+use bevy::window::WindowResolution;
 use bevy_rapier3d::prelude::*;
 use raven::flycam::*;
 use raven::terrain::*;
@@ -7,10 +8,23 @@ use raven::ui::*;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(bevy::log::LogPlugin {
-            filter: "raven=debug,warn".into(),
-            ..default()
-        }))
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Raven".to_string(),
+                        resolution: WindowResolution::new(500, 300),
+                        visible: true,
+                        position: WindowPosition::Centered(MonitorSelection::Primary),
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(bevy::log::LogPlugin {
+                    filter: "raven=debug,warn".into(),
+                    ..default()
+                }),
+        )
         .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(PlayerPlugin)
