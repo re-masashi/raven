@@ -1,7 +1,7 @@
 use bevy::{
     asset::RenderAssetUsages,
     camera::CameraProjection,
-    math::{Vec3A, bounding::Aabb3d},
+    math::{bounding::Aabb3d, Vec3A},
     mesh::{Indices, Mesh},
     prelude::*,
     render::render_resource::PrimitiveTopology,
@@ -50,8 +50,8 @@ struct TerrainGenerator {
 }
 
 impl TerrainGenerator {
-    fn new(_seed: u32) -> Self {
-        let fixed_seed = 12345;
+    fn new(seed: u32) -> Self {
+        let fixed_seed = seed;
         Self {
             base_terrain: Fbm::new(fixed_seed)
                 .set_octaves(6)

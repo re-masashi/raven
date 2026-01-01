@@ -13,6 +13,7 @@ pub mod prelude {
 pub struct MovementSettings {
     pub sensitivity: f32,
     pub speed: f32,
+    pub sprint_speed: f32,
     pub jump_impulse: f32,
     pub air_acceleration: f32,
     pub gravity_scale: f32,
@@ -26,6 +27,7 @@ impl Default for MovementSettings {
         Self {
             sensitivity: 0.00012,
             speed: 40.,
+            sprint_speed: 80.,
             jump_impulse: 8.0,
             air_acceleration: 15.0,
             gravity_scale: 1.0,
@@ -45,6 +47,7 @@ pub struct KeyBindings {
     pub move_right: KeyCode,
     pub jump: KeyCode,
     pub toggle_grab_cursor: KeyCode,
+    pub sprint: KeyCode,
 }
 
 impl Default for KeyBindings {
@@ -56,6 +59,7 @@ impl Default for KeyBindings {
             move_right: KeyCode::KeyD,
             jump: KeyCode::Space,
             toggle_grab_cursor: KeyCode::Escape,
+            sprint: KeyCode::ShiftLeft,
         }
     }
 }
@@ -171,9 +175,14 @@ fn player_move(
 
     for (mut velocity, state) in player_query.iter_mut() {
         if move_input != Vec3::ZERO {
+            let ground_speed = if keys.pressed(key_bindings.sprint) {
+                settings.sprint_speed
+            } else {
+                settings.speed
+            };
             let target_velocity = move_input.normalize()
                 * if state.is_grounded {
-                    settings.speed
+                    ground_speed
                 } else {
                     settings.air_acceleration
                 };
